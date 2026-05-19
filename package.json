@@ -1,0 +1,44 @@
+{
+  "name": "acceso-elemental-cpm",
+  "version": "1.0.0",
+  "description": "Gestión de Pruebas de Acceso · C.P.M. Marcos Redondo",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable",
+    "test": "node --test test/lib.test.mjs"
+  },
+  "build": {
+    "appId": "es.cpm.acceso-elemental",
+    "productName": "Acceso Elemental · CPM Marcos Redondo",
+    "directories": {
+      "output": "Portable"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "icon.png"
+    },
+    "files": [
+      "main.js",
+      "lib.js",
+      "preload.js",
+      "preload-preview.js",
+      "conservatorio_form.html",
+      "icon.png",
+      "header-conservatorio.jpeg",
+      "header-clm.png",
+      "Oficio.pdf",
+      "public/**/*",
+      "node_modules/pdf-lib/**/*",
+      "node_modules/@pdf-lib/**/*"
+    ]
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  }
+}

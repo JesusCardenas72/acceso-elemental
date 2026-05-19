@@ -1,0 +1,2481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>C.P.M. Marcos Redondo · Pruebas de Acceso EE</title>
+<style>@font-face{font-family:'Finger Paint';font-style:normal;font-weight:400;src:url('public/fonts/finger-paint.ttf') format('truetype')}</style>
+<script src="lib.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  --or:#E8510A;--or-lt:#fdf0ea;--or-dk:#b33d05;
+  --bg:#f5f5f3;--surface:#fff;--surface2:#f9f8f6;
+  --txt:#1a1a18;--txt2:#6b6b67;--txt3:#a5a5a0;
+  --bdr:#e0deda;--bdr2:#cccac4;
+  --ok:#3B6D11;--ok-bg:#EAF3DE;--err:#A32D2D;--err-bg:#FCEBEB;
+  --rad:50px;--rad-sm:8px;--rad-md:12px;
+  font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column
+}
+body.dark{
+  --bg:#1e1e1c;--surface:#2a2a27;--surface2:#232320;
+  --txt:#f0efe8;--txt2:#a5a4a0;--txt3:#6b6b67;
+  --bdr:#3a3a36;--bdr2:#4a4a45;--or-lt:#2d1a0a;
+}
+@media(prefers-color-scheme:dark){body:not(.light){
+  --bg:#1e1e1c;--surface:#2a2a27;--surface2:#232320;
+  --txt:#f0efe8;--txt2:#a5a4a0;--txt3:#6b6b67;
+  --bdr:#3a3a36;--bdr2:#4a4a45;--or-lt:#2d1a0a;
+}}
+
+header{background:var(--surface);border-bottom:1px solid var(--bdr);padding:14px 28px;display:flex;align-items:center;gap:16px}
+.curso-badge{font-family:'Finger Paint',cursive;font-size:24px;color:#fff;background:var(--or);padding:6px 18px;border-radius:50px;cursor:pointer;transition:.15s;line-height:1.1;flex-shrink:0;white-space:nowrap;box-shadow:0 2px 6px rgba(232,81,10,.35);letter-spacing:1px}
+#histBanner{display:none;background:#fff3e0;border-bottom:1px solid #ff9800;padding:8px 28px;align-items:center;gap:12px}
+#histBanner p{font-size:12px;color:#e65100;flex:1;font-weight:600}
+#histBanner.show{display:flex}
+.curso-badge:hover{background:var(--or-dk);box-shadow:0 3px 10px rgba(179,61,5,.45)}
+.curso-badge.hist{background:var(--txt3);cursor:default;box-shadow:none}
+.curso-badge.hist:hover{background:var(--txt3)}
+.hlogo{width:38px;height:38px;flex-shrink:0}
+.hlogo svg{width:38px;height:38px;fill:var(--or)}
+.htxt{flex:1}.htxt h1{font-size:13px;font-weight:600;letter-spacing:.3px}
+.htxt p{font-size:11px;color:var(--txt2);margin-top:1px}
+details.menu-wrap{position:relative;list-style:none}
+details.menu-wrap summary.menu-btn{background:transparent;border:1.5px solid var(--bdr2);border-radius:var(--rad-sm);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--txt2);transition:.15s;line-height:1;padding:0;list-style:none}
+details.menu-wrap summary.menu-btn::-webkit-details-marker{display:none}
+details.menu-wrap summary.menu-btn:hover{border-color:var(--or);color:var(--or)}
+details.menu-wrap[open] .dropdown{display:block}
+.dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rad-md);min-width:230px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:500;overflow:hidden}
+.drop-item{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:12px;font-weight:600;color:var(--txt);cursor:pointer;transition:.15s;border:none;background:transparent;width:100%;text-align:left;letter-spacing:.2px}
+.dropdown .font-slider{padding:10px 16px;display:flex;gap:8px;align-items:center}
+.dropdown .font-slider input[type=range]{flex:1}
+.drop-item:hover{background:var(--or-lt);color:var(--or)}
+.drop-item.disabled{color:var(--txt3);cursor:not-allowed;pointer-events:none}
+.drop-sep{height:1px;background:var(--bdr);margin:4px 0}
+
+#reloadBanner{display:none;background:var(--or-lt);border-bottom:1px solid var(--or);padding:10px 28px;align-items:center;gap:12px}
+#reloadBanner p{font-size:12px;color:var(--or-dk);flex:1}
+#reloadBanner.show{display:flex}
+
+/* Area principal: reservar espacio bajo el header para permitir scroll interno
+  y ocupar todo el ancho disponible para maximizar espacio horizontal */
+.wrap{max-width:none;width:100%;margin:0 auto;padding:12px 12px 0;display:flex;flex-direction:column;min-height:0;height:calc(100vh - 74px);overflow:hidden}
+
+/* Layout helper: columns are flexible to maximize horizontal space */
+.layout{flex:1;min-height:0;display:flex;gap:18px;align-items:flex-start}
+.col-left{display:flex;flex-direction:column;min-height:0;flex:0 0 420px;max-width:420px}
+.col-right{display:flex;flex-direction:column;min-height:0;flex:1 1 auto;min-width:300px}
+.card.card-list{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.sol-list{flex:1;overflow-y:auto;min-height:0;max-height:100%}
+
+/* Allow form fields in the right column to shrink/grow freely */
+.col-right .field{min-width:0}
+.col-right .card-body{width:100%}
+
+/* Responsive: stack columns on narrow viewports */
+@media (max-width: 880px) {
+  .layout{flex-direction:column;gap:10px}
+  .col-left,.col-right{min-width:0}
+  .wrap{padding:12px}
+}
+
+/* Force full-height chain so .sol-list gets constrained and can scroll */
+.layout{height:100%}
+.col-left{height:100%}
+.card.card-list{height:100%}
+.card.card-list > .card-head{flex:0 0 auto}
+.card.card-list > .sort-bar{flex:0 0 auto}
+.sol-list{flex:1 1 auto}
+.card{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rad-md);margin-bottom:16px;overflow:hidden}
+.card.card-list{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;margin-bottom:0}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px 14px;border-bottom:1px solid var(--bdr);gap:10px;flex-wrap:wrap;flex-shrink:0}
+.card-head h2{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;flex:1}
+.num-badge{background:var(--or);color:#fff;font-size:24px;font-weight:700;padding:4px 16px;border-radius:var(--rad);letter-spacing:.5px;white-space:nowrap}
+.num-badge.edit-mode{background:var(--or-dk)}
+.total-pill{background:var(--or-lt);color:var(--or-dk);font-size:11px;font-weight:700;padding:3px 12px;border-radius:var(--rad);white-space:nowrap}
+.card-body{padding:20px 22px}
+
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;flex:1;min-width:160px;margin-bottom:14px}
+.field.w2{flex:2}.field.w3{flex:3}
+label.lbl{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--txt2);margin-bottom:5px}
+
+input[type=text],input[type=date],select,textarea{
+  border:1.5px solid var(--bdr2);border-radius:var(--rad-sm);
+  padding:9px 13px;font-size:13px;background:var(--surface2);color:var(--txt);
+  transition:border .15s,background .15s;outline:none;width:100%;
+  -webkit-appearance:none;appearance:none
+}
+
+/* Make the header filter selects only as wide as their content, not 100% */
+.card.card-list .card-head #filtroCurso,
+.card.card-list .card-head #filtroEspecialidad{
+  width: auto !important;
+  min-width: 120px;
+  max-width: 280px;
+  flex: 0 0 auto;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--or);background:var(--surface)}
+input::placeholder,textarea::placeholder{color:var(--txt3)}
+input:disabled,select:disabled{background:var(--bg);color:var(--txt3);cursor:not-allowed;border-color:var(--bdr)}
+textarea{resize:vertical;min-height:70px;font-family:inherit}
+
+.inp-wrap{position:relative}.inp-wrap input{padding-right:36px}
+.inp-ico{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:13px}
+.inp-ok .inp-ico{color:var(--ok)}.inp-err .inp-ico{color:var(--err)}
+.inp-ok input{border-color:var(--ok);background:var(--ok-bg);color:#27500A}
+.inp-err input{border-color:var(--err);background:var(--err-bg);color:#791F1F}
+
+.toggle-row{display:flex;align-items:center;gap:10px;padding-top:2px}
+.toggle{position:relative;width:46px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.sl{position:absolute;inset:0;background:var(--bdr2);border-radius:var(--rad);cursor:pointer;transition:.25s}
+.sl:before{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;left:3px;top:3px;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked+.sl{background:var(--or)}
+.toggle input:checked+.sl:before{transform:translateX(22px)}
+.tlbl{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.tlbl.tno{color:var(--txt3)}.tlbl.tsi{color:var(--or)}
+
+.btn-row{display:flex;gap:10px;justify-content:flex-end;padding-top:6px;flex-wrap:wrap}
+.btn{padding:8px 20px;border-radius:var(--rad);font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;border:1.5px solid;cursor:pointer;transition:.15s;outline:none;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:scale(.97)}
+.btn-ghost{background:transparent;border-color:var(--bdr2);color:var(--txt2)}.btn-ghost:hover{border-color:var(--or);color:var(--or)}
+.btn-outline{background:transparent;border-color:var(--or);color:var(--or)}.btn-outline:hover{background:var(--or-lt)}
+.btn-solid{background:var(--or);border-color:var(--or);color:#fff}.btn-solid:hover{background:var(--or-dk);border-color:var(--or-dk)}
+.btn-danger{background:transparent;border-color:var(--err);color:var(--err)}.btn-danger:hover{background:var(--err-bg)}
+.btn-sm{padding:5px 13px;font-size:10px}
+
+.sort-bar{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;padding:8px 12px;border-bottom:1px solid var(--bdr);background:var(--surface2);flex-shrink:0;overflow-x:auto}
+.sort-lbl{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-right:4px}
+.sort-btn{padding:4px 8px;border-radius:var(--rad);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1.5px solid var(--bdr2);background:transparent;color:var(--txt2);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.sort-btn:hover{border-color:var(--or);color:var(--or)}
+.sort-btn.active{background:var(--or);border-color:var(--or);color:#fff}
+
+.sol-list{padding:16px 22px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1}
+.sol-card{border:1.5px solid var(--bdr);border-radius:var(--rad-sm);padding:12px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:border .15s,background .15s}
+.sol-card:hover{border-color:var(--or);background:var(--or-lt)}
+.sol-card.excl{opacity:.65}
+.sc-num{background:var(--surface2);border:1.5px solid var(--bdr2);border-radius:var(--rad-sm);font-size:22px;font-weight:700;color:var(--txt2);padding:4px 12px;white-space:nowrap;flex-shrink:0;order:3;align-self:center}
+.sol-card.excl .sc-num{background:var(--err-bg);border-color:var(--err);color:var(--err)}
+.sc-info{flex:1;min-width:0}
+.sc-name{font-size:13px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-meta{font-size:11px;color:var(--txt2);display:flex;flex-wrap:wrap;gap:4px 12px}
+.sc-obs{font-size:11px;color:var(--txt3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+.pill{display:inline-flex;align-items:center;border-radius:var(--rad);padding:2px 9px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.pill-si{background:var(--err-bg);color:var(--err)}.pill-no{background:var(--ok-bg);color:var(--ok)}
+.sc-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.empty-state{text-align:center;color:var(--txt3);font-style:italic;padding:28px 0;font-size:13px}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rad-md);padding:28px 30px;max-width:390px;width:90%;text-align:center;border:1px solid var(--bdr)}
+.modal-icon{width:48px;height:48px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
+.modal-icon.warn{background:var(--err-bg)}.modal-icon svg{width:22px;height:22px}
+.modal-icon.warn svg{fill:var(--err)}.modal-icon.del svg{fill:var(--err)}.modal-icon.del{background:var(--err-bg)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:10px}
+.modal h3.warn,.modal h3.del{color:var(--err)}
+.modal p{font-size:12px;line-height:1.7;color:var(--txt2);margin-bottom:20px}
+.modal .modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.modal-wide{max-width:600px;text-align:left}
+.modal-wide .modal-icon{margin-left:auto;margin-right:auto}
+.modal-wide h3,.modal-wide p{text-align:center}
+.dup-sim-badge{font-size:11px;font-weight:700;color:var(--txt2);background:var(--surface2);border:1px solid var(--bdr2);border-radius:var(--rad);padding:3px 14px;display:block;text-align:center;margin:0 auto 12px;width:fit-content}
+.dup-compare{display:flex;gap:10px;margin-bottom:18px}
+.dup-card{flex:1;background:var(--surface2);border:1.5px solid var(--bdr);border-radius:var(--rad-sm);padding:12px 14px;min-width:0}
+.dup-card.dup-existing{border-color:var(--err)}
+.dup-card.dup-new{border-color:var(--or)}
+.dup-card-label{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;color:var(--txt2)}
+.dup-card.dup-existing .dup-card-label{color:var(--err)}
+.dup-card.dup-new .dup-card-label{color:var(--or)}
+.dup-field{display:flex;flex-direction:column;margin-bottom:7px;font-size:12px}
+.dup-field span{font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);margin-bottom:1px}
+.dup-field strong{color:var(--txt);font-weight:600;word-break:break-word}
+.dup-field.diff strong{color:var(--err);font-weight:700}
+
+#toast{display:none;position:fixed;bottom:20px;right:20px;background:var(--txt);color:var(--surface);font-size:12px;font-weight:600;letter-spacing:.3px;padding:9px 20px;border-radius:var(--rad);z-index:1000}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hlogo">
+    <svg viewBox="0 0 1080 1080"><path d="M307.45 221.51C328.47 216.99 349.52 235.94 348.80 257.02C349.41 320.35 348.69 383.69 349.06 447.02C348.24 456.85 355.74 466.80 365.45 468.51C375.98 471.06 387.99 464.12 390.18 453.35C391.33 444.80 390.50 435.84 393.60 427.64C397.89 417.56 406.66 409.14 417.40 406.45C434.35 401.18 453.75 411.71 459.89 428.05C462.73 437.07 461.91 446.67 462.11 456.00C461.79 486.01 462.20 516.03 462.01 546.04C462.83 560.14 453.92 573.52 441.38 579.45C425.46 586.90 404.45 580.65 396.03 564.97C391.33 557.83 391.85 548.91 389.93 540.91C387.56 532.42 379.00 525.60 369.99 526.10C358.88 525.50 348.31 535.76 349.21 547.03C348.19 578.62 349.93 610.27 348.61 641.86C347.83 656.80 336.24 670.50 321.63 673.67C306.46 677.94 289.00 670.05 282.04 655.98C276.51 647.20 279.83 635.76 273.88 627.13C268.33 619.35 256.74 615.20 247.99 620.00C240.33 623.03 235.45 631.06 235.30 639.18C234.31 684.43 235.65 729.73 234.77 774.98C233.79 791.03 219.37 804.48 203.57 805.54C182.81 808.78 163.12 789.66 164.22 768.97C163.70 637.32 164.15 505.66 164.01 374.00C164.28 354.05 163.30 334.07 164.39 314.14C165.22 297.70 179.21 282.93 195.66 281.55C214.26 278.63 234.33 293.85 234.76 313.03C235.60 358.00 234.46 403.01 235.16 447.99C234.86 456.33 238.30 464.93 245.56 469.48C255.87 476.31 271.14 471.20 275.98 460.00C278.35 452.57 277.95 444.69 278.11 437.01C277.84 377.00 278.15 316.99 277.90 256.97C276.75 240.02 290.82 223.83 307.45 221.51Z"/><path d="M880.33 256.50C890.40 256.12 899.79 261.33 906.78 268.21C914.21 276.20 916.11 287.45 915.98 297.97C916.05 436.32 915.94 574.67 916.04 713.02C916.37 724.32 912.46 736.20 903.75 743.74C892.34 754.04 873.70 755.95 860.99 746.98C851.06 741.06 844.89 729.56 845.07 718.04C844.65 678.02 845.34 638.00 844.94 597.98C844.64 590.33 840.99 582.72 834.44 578.52C823.06 571.03 805.19 578.38 803.06 591.99C800.98 604.86 802.21 618.00 801.97 631.00C801.86 695.99 802.33 760.99 801.78 825.97C801.95 844.32 784.07 859.98 766.03 858.96C747.22 859.36 730.62 841.63 731.20 822.98C730.53 749.67 731.46 676.32 730.82 603.01C731.01 592.59 721.74 582.34 710.95 583.05C700.84 581.43 691.22 589.62 689.72 599.42C688.88 610.85 689.40 623.96 681.08 633.07C669.17 649.73 641.84 650.87 628.23 635.78C619.93 628.35 617.50 616.74 617.94 606.04C618.19 571.03 617.63 536.00 618.18 501.00C619.15 485.05 632.54 471.05 648.41 469.43C665.85 466.34 685.34 479.18 687.61 497.06C689.61 506.33 689.66 518.72 699.92 523.11C711.28 529.88 728.19 522.84 730.45 509.59C732.10 476.44 730.13 443.19 731.20 410.02C732.39 395.25 743.38 381.38 758.05 378.11C776.01 372.81 796.53 385.00 800.78 403.10C802.10 410.51 801.86 418.23 804.61 425.37C809.32 437.00 826.44 441.17 835.92 432.90C843.32 428.39 844.76 418.94 844.92 411.03C845.43 370.68 844.62 330.28 844.92 289.94C844.84 271.41 862.14 256.11 880.33 256.50Z"/><path d="M531.46 505.60C551.30 499.75 573.99 515.45 574.92 536.04C578.35 554.58 562.77 574.28 543.95 574.89C525.36 578.41 505.83 562.72 505.07 543.96C501.95 526.89 514.75 509.08 531.46 505.60Z"/></svg>
+  </div>
+  <div class="htxt">
+    <h1>Prueba de Acceso · Enseñanzas Elementales</h1>
+    <p>Conservatorio Profesional de Música Marcos Redondo</p>
+  </div>
+  <details class="menu-wrap" id="menuWrap">
+    <summary class="menu-btn" title="Menú">⋮</summary>
+    <div class="dropdown">
+      <button class="drop-item" onclick="toggleTheme()">
+        <span id="menuThemeIco">🌙</span><span id="menuThemeTxt">Modo Oscuro</span>
+      </button>
+      <div class="font-slider-wrap">
+        <div class="font-slider">
+          <label style="font-size:12px;font-weight:600;min-width:92px">Tamaño fuente</label>
+          <input type="range" id="fontScale" min="80" max="140" step="5" value="100">
+          <span id="fontScaleVal" style="min-width:40px;text-align:right;font-weight:700">100%</span>
+        </div>
+      </div>
+      <div class="drop-sep"></div>
+      <button class="drop-item" onclick="accionCargarJSON()">
+        📂 Importar JSON
+      </button>
+      <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="onJSONSelected(event)">
+      <button class="drop-item" onclick="accionExportarJSON()">
+        💾 Exportar copia JSON
+      </button>
+      <div class="drop-sep"></div>
+      <button class="drop-item" onclick="accionCambiarCurso()">
+        📚 Cambiar curso escolar
+      </button>
+      <div class="drop-sep"></div>
+      <button class="drop-item" onclick="accionExportarHistorico()">
+        🗄️ Exportar datos históricos
+      </button>
+      <button class="drop-item" onclick="accionImportarHistorico()">
+        📥 Importar a curso histórico
+      </button>
+      <div class="drop-sep"></div>
+      <button class="drop-item" onclick="accionListado('Provisional')">📋 Listado Provisional</button>
+      <button class="drop-item" onclick="accionListado('Definitivo')">📄 Listado Definitivo</button>
+      <button class="drop-item" onclick="accionActasEvaluacion()">📝 Actas de evaluación (2º-4º)</button>
+      <button class="drop-item" onclick="accionTribunales1()">🏛️ Tribunales 1º EE</button>
+    </div>
+  </details>
+  <div class="curso-badge" id="cursoBadge" onclick="abrirSelectorCurso()" title="Cambiar curso escolar">Curso --/--</div>
+</header>
+
+<!-- Banner recarga -->
+<div id="reloadBanner">
+  <p>📁 Se encontró el archivo de datos de la sesión anterior. ¿Deseas cargarlo?</p>
+  <button class="btn btn-solid btn-sm" onclick="cargarDesdeHandle()">Cargar datos</button>
+  <button class="btn btn-ghost btn-sm" onclick="document.getElementById('reloadBanner').classList.remove('show')">Ignorar</button>
+</div>
+
+<!-- Banner modo histórico -->
+<div id="histBanner">
+  <p>📚 Estás viendo datos históricos del curso <span id="histBannerCurso"></span>. Solo lectura.</p>
+  <button class="btn btn-solid btn-sm" onclick="abrirSelectorCurso()">Cambiar curso</button>
+</div>
+<script>
+// Font scale slider for the form (persists in localStorage)
+document.addEventListener('DOMContentLoaded', function(){
+  const slider = document.getElementById('fontScale');
+  const label = document.getElementById('fontScaleVal');
+  const rightCol = document.querySelector('.col-right');
+  const leftCol = document.querySelector('.col-left');
+  function applyScale(v){
+    const f = String(v);
+    // Apply scaling to both columns when present so the list and details scale together.
+    [leftCol, rightCol].forEach(el => {
+      if (!el) return;
+      // Use zoom for full-element scaling (works in Chromium/Electron).
+      el.style.zoom = (parseInt(f,10) / 100);
+      // Also set font-size as graceful fallback for non-zoom environments.
+      el.style.fontSize = f + '%';
+    });
+    if (label) label.textContent = f + '%';
+  }
+  const saved = localStorage.getItem('formFontScale') || '100';
+  if (slider){
+    slider.value = saved;
+    applyScale(saved);
+    slider.addEventListener('input', function(e){
+      applyScale(e.target.value);
+      localStorage.setItem('formFontScale', e.target.value);
+    });
+  } else {
+    applyScale(saved);
+  }
+});
+</script>
+
+<!-- Modal bienvenida -->
+<div class="overlay open" id="modalBienvenida">
+  <div class="modal" style="max-width:440px;text-align:left">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+      <div style="width:52px;height:52px;background:var(--or);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9-4-9-9-9zm-1 13V8l6 4-6 4z"/></svg>
+      </div>
+      <div>
+        <p style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--txt2);margin-bottom:2px">Bienvenido/a</p>
+        <h3 style="font-size:16px;font-weight:700;color:var(--txt)">C.P.M. Marcos Redondo</h3>
+        <p style="font-size:11px;color:var(--txt2)">Gestión de Pruebas de Acceso · Enseñanzas Elementales</p>
+      </div>
+    </div>
+    <p style="font-size:12px;line-height:1.8;color:var(--txt2);margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--bdr)">
+      Esta aplicación permite registrar y gestionar las solicitudes de admisión.<br>
+      Los datos se guardan en un archivo <strong style="color:var(--txt)">JSON</strong> en tu equipo.<br><br>
+      Si ya tienes un archivo de datos de convocatorias anteriores, cárgalo ahora. Si es la primera vez, empieza directamente.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <label class="btn btn-solid" for="jsonWelcomeInput" style="cursor:pointer;justify-content:center">
+        📂 Cargar archivo de datos existente
+      </label>
+      <input type="file" id="jsonWelcomeInput" accept=".json" style="display:none" onchange="onJSONWelcome(event)">
+      <button class="btn btn-ghost" style="justify-content:center" onclick="cerrarBienvenida()">
+        Empezar sin datos · Nueva convocatoria
+      </button>
+    </div>
+  </div>
+</div>
+
+  <div class="wrap">
+    <div class="layout" style="display:flex;gap:18px;align-items:flex-start;min-height:0">
+      <!-- Left: Solicitudes registradas -->
+      <div class="col-left" style="flex:0 1 520px;min-width:420px;max-width:720px">
+        <div class="card card-list">
+          <div class="card-head" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div style="width:100%;display:flex;align-items:center;gap:12px">
+              <h2 style="flex:0 0 auto;margin-right:8px">Solicitudes registradas</h2>
+              <span class="total-pill" id="totalBadge">0 registros</span>
+              <div style="flex:1"></div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn btn-ghost btn-sm" onclick="accionCargarJSON()">📂 Importar</button>
+                <button class="btn btn-ghost btn-sm" onclick="accionExportarJSON()">💾 Exportar</button>
+              </div>
+            </div>
+            <!-- Filters: búsqueda (único campo: nombre o apellidos) y select Curso/Especialidad -->
+            <div style="width:100%;display:flex;gap:10px;align-items:center;flex-wrap:nowrap;overflow-x:auto">
+              <div style="position:relative;flex:1;min-width:180px;display:flex;align-items:center">
+                <input type="text" id="filtro" placeholder="Buscar por Nombre o Apellidos" style="flex:1;padding:8px;padding-right:28px;border-radius:8px;border:1px solid var(--bdr2);background:var(--surface2)" oninput="toggleClearBtn('filtro','filtroClear')">
+                <button id="filtroClear" onclick="limpiarFiltro('filtro','filtroClear')" style="display:none;position:absolute;right:6px;background:none;border:none;cursor:pointer;font-size:18px;color:var(--txt3);padding:0;line-height:1" title="Limpiar">×</button>
+              </div>
+              <div style="flex:0 0 auto;display:flex;align-items:center;gap:3px">
+                <select id="filtroCurso" style="padding:8px;border-radius:8px;border:1px solid var(--bdr2);background:var(--surface2)" onchange="toggleClearBtn('filtroCurso','filtroCursoClear')">
+                  <option value="">Cursos</option>
+                  <option value="1">1º</option>
+                  <option value="2">2º</option>
+                  <option value="3">3º</option>
+                  <option value="4">4º</option>
+                </select>
+                <button id="filtroCursoClear" onclick="limpiarFiltro('filtroCurso','filtroCursoClear')" style="display:none;background:none;border:none;cursor:pointer;font-size:18px;color:var(--txt3);padding:0;line-height:1" title="Limpiar">×</button>
+              </div>
+              <div style="flex:0 0 auto;display:flex;align-items:center;gap:3px">
+                <select id="filtroEspecialidad" style="padding:8px;border-radius:8px;border:1px solid var(--bdr2);background:var(--surface2)" onchange="toggleClearBtn('filtroEspecialidad','filtroEspClear')">
+                  <option value="">Especialidad</option>
+                  <option>Clarinete</option><option>Contrabajo</option><option>Fagot</option>
+                  <option>Flauta</option><option>Guitarra</option><option>Oboe</option>
+                  <option>Percusión</option><option>Piano</option><option>Saxofón</option>
+                  <option>Trombón</option><option>Trompa</option><option>Trompeta</option>
+                  <option>Tuba</option><option>Viola</option><option>Violín</option>
+                  <option>Violoncello</option>
+                </select>
+                <button id="filtroEspClear" onclick="limpiarFiltro('filtroEspecialidad','filtroEspClear')" style="display:none;background:none;border:none;cursor:pointer;font-size:18px;color:var(--txt3);padding:0;line-height:1" title="Limpiar">×</button>
+              </div>
+            </div>
+            <div style="width:100%;display:flex;gap:8px;align-items:center">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3)">Acceso a</span>
+              <button class="sort-btn" id="btnNivel1" onclick="setFiltroNivel('1')" title="Ver solo solicitudes de 1º curso">1º curso</button>
+              <button class="sort-btn" id="btnNivel234" onclick="setFiltroNivel('234')" title="Ver solicitudes de 2º, 3º y 4º curso">2º, 3º y 4º curso</button>
+              <button class="sort-btn" id="btnNivelRedir" onclick="setFiltroNivel('redir')" title="Ver alumnos redirigidos a 1º desde otros cursos" style="color:#e65100">Redirigidos a 1º</button>
+            </div>
+          </div>
+          <div class="sort-bar">
+            <span class="sort-lbl">Ordenar</span>
+            <button class="sort-btn active" data-key="num" onclick="setSort('num')"># <span id="arr-num">↓</span></button>
+            <button class="sort-btn" data-key="apellidos" onclick="setSort('apellidos')">Apellidos <span id="arr-apellidos"></span></button>
+            <button class="sort-btn" data-key="nombre" onclick="setSort('nombre')">Nombre <span id="arr-nombre"></span></button>
+            <button class="sort-btn" data-key="fnac" onclick="setSort('fnac')">F. Nac. <span id="arr-fnac"></span></button>
+            <button class="sort-btn" data-key="curso" onclick="setSort('curso')">Curso <span id="arr-curso"></span></button>
+            <button class="sort-btn" data-key="excluido" onclick="setSort('excluido')">Excluido <span id="arr-excluido"></span></button>
+          </div>
+          <div class="sol-list" id="solList" style="overflow-y:auto"><p class="empty-state">Sin solicitudes registradas.</p></div>
+        </div>
+      </div>
+
+      <!-- Right: Nueva solicitud (form) -->
+      <div class="col-right" style="flex:1 1 auto;min-width:300px">
+        <div class="card">
+          <div class="card-head">
+            <h2 id="formTitle">Nueva solicitud</h2>
+            <span class="num-badge" id="badgeNum">#1</span>
+            <button class="btn btn-ghost btn-sm" id="cancelEditBtn" style="display:none" onclick="cancelarEdicion()">✕ Cancelar edición</button>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="field w2"><label class="lbl">Apellidos *</label><input type="text" id="apellidos" placeholder="Apellidos del alumno/a"></div>
+              <div class="field w2"><label class="lbl">Nombre *</label><input type="text" id="nombre" placeholder="Nombre"></div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label class="lbl">Fecha de nacimiento *</label>
+                <div class="inp-wrap" id="fnacWrap">
+                  <input type="text" id="fnac" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off">
+                  <span class="inp-ico" id="fnacIco"></span>
+                </div>
+                <span id="edadInfo" style="display:none;margin-top:6px;font-size:.78rem;color:var(--txt2)"></span>
+              </div>
+              <div class="field"><label class="lbl">Curso *</label>
+                <select id="curso">
+                  <option value="">— Seleccionar —</option>
+                  <option value="1">1º Curso</option>
+                  <option value="2">2º Curso</option>
+                  <option value="3">3º Curso</option>
+                  <option value="4">4º Curso</option>
+                </select>
+              </div>
+              <div class="field w2"><label class="lbl">Especialidad</label>
+                <select id="especialidad" disabled>
+                  <option value="">— Seleccionar curso primero —</option>
+                  <option>Clarinete</option><option>Contrabajo</option><option>Fagot</option>
+                  <option>Flauta</option><option>Guitarra</option><option>Oboe</option>
+                  <option>Percusión</option><option>Piano</option><option>Saxofón</option>
+                  <option>Trombón</option><option>Trompa</option><option>Trompeta</option>
+                  <option>Tuba</option><option>Viola</option><option>Violín</option>
+                  <option>Violoncello</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field">
+                <label class="lbl">Excluido</label>
+                <div class="toggle-row" style="margin-top:6px">
+                  <label class="toggle"><input type="checkbox" id="excluido"><span class="sl"></span></label>
+                  <span class="tlbl tno" id="excluidoLabel">No</span>
+                </div>
+              </div>
+              <div class="field" id="redirigidoWrap" style="display:none">
+                <label class="lbl">Redirigido a 1º</label>
+                <div class="toggle-row" style="margin-top:6px">
+                  <label class="toggle"><input type="checkbox" id="redirigido_a_1"><span class="sl"></span></label>
+                  <span class="tlbl tno" id="redirigidoLabel">No</span>
+                </div>
+              </div>
+              <div class="field w3"><label class="lbl">Observaciones</label>
+                <textarea id="obs" placeholder="Observaciones adicionales…"></textarea>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-ghost" onclick="limpiar()">Limpiar</button>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                <button class="btn btn-outline" id="saveBtn" onclick="guardar()">Guardar solicitud</button>
+                <span style="font-size:10px;font-weight:600;letter-spacing:.4px;color:var(--txt3)">Ctrl+Enter</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal edad -->
+<div class="overlay" id="modalEdad">
+  <div class="modal">
+    <div class="modal-icon warn">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    </div>
+    <h3 class="warn">Alumno excluido por edad</h3>
+    <p id="modalEdadMsg"></p>
+    <div class="modal-btns">
+      <button class="btn btn-solid" onclick="cerrarModalEdad()">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal duplicado -->
+<div class="overlay" id="modalDup">
+  <div class="modal modal-wide">
+    <div class="modal-icon warn">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+    </div>
+    <h3 class="warn" id="modalDupTitle">Posible duplicado</h3>
+    <p id="modalDupMsg"></p>
+    <span class="dup-sim-badge" id="dupSimBadge"></span>
+    <div class="dup-compare">
+      <div class="dup-card dup-existing">
+        <div class="dup-card-label">Existente · <span id="dupExNum"></span></div>
+        <div class="dup-field" id="dupF_exApellidos"><span>Apellidos</span><strong id="dupExApellidos"></strong></div>
+        <div class="dup-field" id="dupF_exNombre"><span>Nombre</span><strong id="dupExNombre"></strong></div>
+        <div class="dup-field"><span>F. Nac.</span><strong id="dupExFnac"></strong></div>
+        <div class="dup-field"><span>Curso</span><strong id="dupExCurso"></strong></div>
+        <div class="dup-field"><span>Especialidad</span><strong id="dupExEsp"></strong></div>
+        <div class="dup-field" id="dupF_exExc"><span>Excluido</span><strong id="dupExExc"></strong></div>
+        <div class="dup-field" id="dupF_exObs"><span>Obs.</span><strong id="dupExObs"></strong></div>
+      </div>
+      <div class="dup-card dup-new">
+        <div class="dup-card-label">Nuevo registro</div>
+        <div class="dup-field" id="dupF_nwApellidos"><span>Apellidos</span><strong id="dupNwApellidos"></strong></div>
+        <div class="dup-field" id="dupF_nwNombre"><span>Nombre</span><strong id="dupNwNombre"></strong></div>
+        <div class="dup-field"><span>F. Nac.</span><strong id="dupNwFnac"></strong></div>
+        <div class="dup-field"><span>Curso</span><strong id="dupNwCurso"></strong></div>
+        <div class="dup-field"><span>Especialidad</span><strong id="dupNwEsp"></strong></div>
+        <div class="dup-field" id="dupF_nwExc"><span>Excluido</span><strong id="dupNwExc"></strong></div>
+        <div class="dup-field" id="dupF_nwObs"><span>Obs.</span><strong id="dupNwObs"></strong></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="cerrarModalDup()">Cancelar</button>
+      <button class="btn btn-danger" onclick="editarExistenteDup()">Editar existente</button>
+      <button class="btn btn-outline" onclick="confirmarDup()">Guardar igualmente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal eliminar -->
+<div class="overlay" id="modalDel">
+  <div class="modal">
+    <div class="modal-icon del">
+      <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+    </div>
+    <h3 class="del">Eliminar solicitud</h3>
+    <p id="modalDelMsg"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="cerrarModalDel()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal configuración tribunales 1º EE -->
+<div class="overlay" id="modalTribunales">
+  <div class="modal modal-wide" style="max-width:700px;text-align:left">
+    <div class="modal-icon" style="background:#E8F4FD">
+      <svg viewBox="0 0 24 24" fill="#1a73e8"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+    </div>
+    <h3 style="color:#1a73e8">Configurar Tribunales 1º EE</h3>
+    <p style="margin-bottom:15px">Configura los datos de cada tribunal. Estos datos se usarán al generar el PDF.</p>
+    <div class="modal-scroll">
+    <div style="background:var(--surface2);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+        <label class="lbl" style="margin:0;white-space:nowrap">Nº TRIBUNALES</label>
+        <input type="range" id="tribCountSlider" min="2" max="12" value="8" style="flex:1;accent-color:var(--or)">
+        <span id="tribCountValue" style="font-size:15px;font-weight:700;color:var(--or);min-width:24px;text-align:center">8</span>
+      </div>
+      <div id="tribOddOptions" style="display:none;font-size:12px;color:var(--txt2);align-items:center;gap:8px">
+        <span>Desparejado en 1ª fila</span>
+        <label class="trib-toggle">
+          <input type="checkbox" id="tribOddSwitch" onchange="onTribOddPlaceChange()">
+          <span class="trib-toggle-slider"></span>
+        </label>
+        <span>2ª fila</span>
+      </div>
+    </div>
+    <div class="trib-tabs" id="tribTabs" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px"></div>
+    <div style="background:var(--surface2);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--txt2);font-weight:600">Ordenar por:</span>
+        <button class="trib-sort-btn" id="btnSortApellidos" onclick="toggleSortApellidos()" title="Ordenar por apellidos">Apellidos</button>
+        <button class="trib-sort-btn" id="btnSortEdad" onclick="toggleSortEdad()" title="Ordenar por edad">Edad</button>
+          <span id="tribSortInfo" style="font-size:12px;color:var(--txt3);margin-left:4px"></span>
+      </div>
+    </div>
+    <div id="tribRedirigidosWrap" style="display:none;background:var(--surface2);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:700;color:#e65100">Alumnos redirigidos a 1º</span>
+          <span id="tribRedirCount" style="font-size:12px;color:var(--txt3)"></span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;color:var(--txt2)">Todos a:</span>
+          <select id="tribRedirTodos" style="font-size:12px;padding:3px 6px;border-radius:4px;border:1px solid var(--bdr2)" onchange="asignarRedirigidosTodos()">
+            <option value="">—</option>
+          </select>
+        </div>
+      </div>
+      <div id="tribRedirList"></div>
+    </div>
+    <div id="tribContent" style="background:var(--surface2);border:1px solid var(--bdr);border-radius:8px;padding:16px">
+      <div class="row" style="margin-bottom:10px">
+        <div class="field" style="flex:0 0 55px">
+          <label class="lbl">ALUMNOS</label>
+          <input type="number" id="tribNumAlumnos" min="0" max="99" placeholder="Auto" style="text-align:center;padding:9px 6px">
+        </div>
+        <div class="field" style="flex:1;min-width:120px">
+          <label class="lbl">DÍA</label>
+          <input type="text" id="tribDia" placeholder="Ej: Lunes 15 de junio">
+        </div>
+        <div class="field" style="flex:0.5;min-width:80px">
+          <label class="lbl">HORA</label>
+          <input type="text" id="tribHora" placeholder="Ej: 09:00">
+        </div>
+        <div class="field" style="flex:1;min-width:120px">
+          <label class="lbl">AULA</label>
+          <input type="text" id="tribAula" placeholder="Ej: Aula 3">
+        </div>
+      </div>
+      <div id="tribAlumInfo" style="font-size:12px;color:var(--txt3);margin-top:-6px;margin-bottom:10px"></div>
+      <div class="field">
+        <label class="lbl">NOMBRES DEL TRIBUNAL (uno por línea)</label>
+        <textarea id="tribNombres" rows="4" placeholder="Ej:&#10;D. Juan Pérez García&#10;Dª María López Ruiz&#10;D. Carlos Sánchez Martín"></textarea>
+      </div>
+    </div>
+    <div id="apoyoContent" style="display:none;background:var(--surface2);border:1px solid var(--bdr);border-radius:8px;padding:16px">
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--or);margin-bottom:8px;text-transform:uppercase">Profesorado de Apoyo</div>
+        <div style="font-size:12px;color:var(--txt3);margin-bottom:8px">Clica en los tribunales para asignarlos. Arrastra entre filas para moverlos.</div>
+        <div id="apoyoRows"></div>
+        <button class="btn btn-ghost" style="font-size:12px;margin-top:6px" onclick="addApoyoRow()">+ Añadir fila</button>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--or);margin-bottom:8px;text-transform:uppercase">Profesorado Suplente Lenguaje Musical / Fundamentos</div>
+        <textarea id="supLMRows" rows="3" placeholder="Un nombre por línea" style="width:100%;padding:6px 8px;border:1px solid var(--bdr2);border-radius:4px;font-size:12px;background:var(--surface);color:var(--txt);resize:vertical"></textarea>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--or);margin-bottom:8px;text-transform:uppercase">Profesorado Suplente</div>
+        <textarea id="supRows" rows="3" placeholder="Un nombre por línea" style="width:100%;padding:6px 8px;border:1px solid var(--bdr2);border-radius:4px;font-size:12px;background:var(--surface);color:var(--txt);resize:vertical"></textarea>
+      </div>
+    </div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn btn-ghost" onclick="cerrarModalTribunales()">Cancelar</button>
+      <button class="btn btn-solid" onclick="guardarYGenerarTribunales()">Guardar y generar PDF</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.trib-tab{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--bdr2);background:transparent;color:var(--txt2);transition:.15s;min-width:78px;text-align:center}
+.trib-tab:hover{border-color:var(--or);color:var(--or)}
+.trib-tab.active{background:var(--or);border-color:var(--or);color:#fff}
+.trib-tab.tab-apoyo{border-color:var(--or);color:var(--or);font-style:italic}
+.trib-tab.tab-apoyo.active{background:var(--or);border-color:var(--or);color:#fff}
+.trib-apoyo-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 8px;border:1px solid var(--bdr2);border-radius:6px;background:var(--surface);transition:.15s}
+.trib-apoyo-row.drag-over{border-color:var(--or);background:rgba(26,115,232,.05)}
+.trib-apoyo-row input[type=text]{flex:1;padding:6px 8px;border:1px solid var(--bdr2);border-radius:4px;font-size:12px;background:transparent;color:var(--txt);min-width:120px}
+.trib-apoyo-cards{display:flex;flex-direction:column;gap:4px;flex:1}
+.trib-card{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:5px;font-size:12px;font-weight:600;cursor:grab;border:1.5px solid var(--bdr2);background:var(--surface2);color:var(--txt2);transition:.15s;user-select:none;min-width:32px}
+.trib-card:hover{border-color:var(--or);color:var(--or)}
+.trib-card.selected{background:var(--or);border-color:var(--or);color:#fff}
+.trib-card.dragging{opacity:.4;transform:scale(.95)}
+.trib-card:active{cursor:grabbing}
+.trib-apoyo-del{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:16px;padding:2px 4px;border-radius:3px;line-height:1}
+.trib-apoyo-del:hover{color:#e53935;background:rgba(229,57,53,.1)}
+.trib-sort-btn{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--bdr2);background:transparent;color:var(--txt2);transition:.15s}
+.trib-sort-btn:hover{border-color:var(--bl);color:var(--bl)}
+.trib-sort-btn.active-asc{background:#e8f5e9;border-color:#4caf50;color:#2e7d32}
+.trib-sort-btn.active-asc::after{content:' ▲';font-size:9px}
+.trib-sort-btn.active-desc{background:#fff3e0;border-color:#ff9800;color:#e65100}
+.trib-sort-btn.active-desc::after{content:' ▼';font-size:9px}
+.trib-toggle{position:relative;display:inline-block;width:36px;height:20px;cursor:pointer}
+.trib-toggle input{opacity:0;width:0;height:0}
+.trib-toggle-slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:20px;transition:.3s}
+.trib-toggle-slider::before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.trib-toggle input:checked+.trib-toggle-slider{background:var(--or)}
+.trib-toggle input:checked+.trib-toggle-slider::before{transform:translateX(16px)}
+</style>
+
+<!-- Modal fecha de pruebas -->
+<div class="overlay" id="modalDiaPruebas">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-icon" style="background:#E8F4FD">
+      <svg viewBox="0 0 24 24" fill="#1a73e8"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+    </div>
+    <h3 style="color:#1a73e8">Fecha de las pruebas</h3>
+    <p style="margin-bottom:15px;font-size:12px;color:var(--txt2)">Selecciona la fecha de las pruebas de evaluación (2º-4º):</p>
+    <input type="date" id="diaPruebasInput"
+      style="width:100%;padding:10px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;text-align:center;background:var(--surface2);color:var(--txt)">
+    <div class="modal-btns" style="margin-top:18px">
+      <button class="btn btn-ghost" onclick="cancelarDiaPruebas()">Cancelar</button>
+      <button class="btn btn-solid" onclick="confirmarDiaPruebas()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal selector de curso escolar -->
+<div class="overlay" id="modalCurso">
+  <div class="modal" style="max-width:420px;text-align:left">
+    <div class="modal-icon" style="background:var(--or-lt)">
+      <svg viewBox="0 0 24 24" fill="var(--or)"><path d="M12 3L1 9l4.5 2.5 4-2.2v3.7l-4 2.2L1 15l11 6 11-6-4.5-2.5-4 2.2v-3.7l4-2.2L12 3z"/></svg>
+    </div>
+    <h3>Curso escolar</h3>
+    <p style="margin-bottom:15px;font-size:12px;color:var(--txt2)">Selecciona el curso con el que quieres trabajar. Los cursos históricos son de solo lectura.</p>
+    <div id="cursoList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;max-height:260px;overflow-y:auto"></div>
+    <div class="modal-btns" style="justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="cerrarModalCurso()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal exportar histórico -->
+<div class="overlay" id="modalExportarHist">
+  <div class="modal" style="max-width:380px;text-align:left">
+    <div class="modal-icon" style="background:#E8F4FD">
+      <svg viewBox="0 0 24 24" fill="#1a73e8"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+    </div>
+    <h3 style="color:#1a73e8">Exportar datos históricos</h3>
+    <p style="margin-bottom:15px;font-size:12px;color:var(--txt2)">Selecciona el curso que quieres exportar:</p>
+    <div id="exportHistList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;max-height:260px;overflow-y:auto"></div>
+    <div class="modal-btns" style="justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="cerrarModalExportarHist()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal importar a histórico -->
+<div class="overlay" id="modalImportarHist">
+  <div class="modal" style="max-width:380px;text-align:left">
+    <div class="modal-icon" style="background:#E8F4FD">
+      <svg viewBox="0 0 24 24" fill="#1a73e8"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+    </div>
+    <h3 style="color:#1a73e8">Importar a curso histórico</h3>
+    <p style="margin-bottom:15px;font-size:12px;color:var(--txt2)">Selecciona el curso de destino. Se sobrescribirán los datos existentes.</p>
+    <div id="importHistList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;max-height:260px;overflow-y:auto"></div>
+    <div class="modal-btns" style="justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="cerrarModalImportarHist()">Cancelar</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="jsonHistFileInput" accept=".json" style="display:none" onchange="onJSONHistSelected(event)">
+
+<div id="toast"></div>
+
+<script>
+/* ── Constantes ── */
+const CURSOS = {1:'1º Curso', 2:'2º Curso', 3:'3º Curso', 4:'4º Curso'};
+const RANGOS = {1:[8,12], 2:[9,13], 3:[10,14], 4:[11,15]};
+
+let ANIO, CURSO_STR, JSON_NAME;
+let cursoActivo = '';
+let esCursoActual = true;
+
+function getCursoActualStr() {
+  const hoy = new Date();
+  const mes = hoy.getMonth();
+  const anio = hoy.getFullYear();
+  const anioInicio = (mes >= 8) ? anio + 1 : anio;
+  const anioSig = anioInicio + 1;
+  return `${String(anioInicio).slice(2)}-${String(anioSig).slice(2)}`;
+}
+
+function setCursoFromStr(str) {
+  cursoActivo = str;
+  const [ini] = str.split('-');
+  ANIO = 2000 + parseInt(ini);
+  CURSO_STR = str;
+  JSON_NAME = `SolicitudesAdmisiónCurso.${CURSO_STR}.json`;
+  esCursoActual = (cursoActivo === getCursoActualStr());
+}
+
+/* ── Estado ── */
+const solicitudes = [];
+let contador = 1, editIdx = null, delIdx = null, sortKey = 'num', sortAsc = true;
+let jsonHandle = null;
+let filtroNivel = null; // null | '1' | '234' | 'redir'
+
+/* ── Helpers de fecha — definiciones en lib.js, wrapper local para ANIO ── */
+function getFnacISO() {
+  return document.getElementById('fnac').dataset.iso || '';
+}
+function calcularEdad(isoFnac) { return calcularEdadConAnio(isoFnac, ANIO); }
+function fmtF(isoFnac) { return isoToDisplay(isoFnac); }
+
+/* ── IndexedDB para persistir el file handle ── */
+function abrirDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('cpm_marcos_redondo', 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('handles');
+    r.onsuccess = e => res(e.target.result);
+    r.onerror = rej;
+  });
+}
+async function guardarHandle(h) {
+  try { const db = await abrirDB(); db.transaction('handles','readwrite').objectStore('handles').put(h,'json'); } catch {}
+}
+async function recuperarHandle() {
+  try {
+    const db = await abrirDB();
+    return new Promise(res => {
+      const r = db.transaction('handles','readonly').objectStore('handles').get('json');
+      r.onsuccess = e => res(e.target.result || null);
+      r.onerror = () => res(null);
+    });
+  } catch { return null; }
+}
+
+/* ── Bienvenida ── */
+window.cerrarBienvenida = function() {
+  document.getElementById('modalBienvenida').classList.remove('open');
+};
+window.onJSONWelcome = async function(e) {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  try { cargarJSON(JSON.parse(await file.text())); cerrarBienvenida(); }
+  catch (err) { toast('❌ Error al leer el JSON: ' + err.message); }
+};
+
+/* ── Modo histórico ── */
+function aplicarModoHistorico() {
+  const badge = document.getElementById('cursoBadge');
+  const banner = document.getElementById('histBanner');
+  const bannerCurso = document.getElementById('histBannerCurso');
+
+  badge.textContent = 'Curso ' + cursoActivo;
+  if (esCursoActual) {
+    badge.classList.remove('hist');
+    banner.classList.remove('show');
+  } else {
+    badge.classList.add('hist');
+    if (bannerCurso) bannerCurso.textContent = cursoActivo;
+    banner.classList.add('show');
+  }
+
+  const formInputs = document.querySelectorAll('.col-right input, .col-right select, .col-right textarea');
+  const saveBtn = document.getElementById('saveBtn');
+  const clearBtn = document.querySelector('.col-right .btn-row .btn-ghost');
+
+  formInputs.forEach(el => el.disabled = !esCursoActual);
+  if (saveBtn) saveBtn.style.display = esCursoActual ? '' : 'none';
+  if (clearBtn) clearBtn.style.display = esCursoActual ? '' : 'none';
+
+  const formTitle = document.getElementById('formTitle');
+  if (formTitle && !esCursoActual) formTitle.textContent = 'Ver solicitud (solo lectura)';
+}
+
+/* ── Selector de curso escolar ── */
+window.abrirSelectorCurso = async function() {
+  if (!window.electronAPI) { toast('Solo disponible en la app de escritorio'); return; }
+  const { cursos, actual } = await window.electronAPI.listarCursos();
+  const list = document.getElementById('cursoList');
+  list.innerHTML = cursos.map(c => {
+    const isActual = c === actual;
+    const isActive = c === cursoActivo;
+    const label = isActual ? `${c} (actual)` : `${c} (histórico)`;
+    const style = isActive
+      ? 'background:var(--or-lt);border-color:var(--or);color:var(--or-dk)'
+      : 'background:var(--surface2)';
+    const check = isActive ? '✓ ' : '';
+    return `<button class="btn btn-ghost" style="width:100%;text-align:left;justify-content:flex-start;${style}" onclick="seleccionarCurso('${c}')">
+      ${check}${label}
+    </button>`;
+  }).join('');
+  document.getElementById('modalCurso').classList.add('open');
+};
+
+window.seleccionarCurso = async function(curso) {
+  if (!window.electronAPI) return;
+  document.getElementById('modalCurso').classList.remove('open');
+  if (curso === cursoActivo) return;
+
+  if (esCursoActual && solicitudes.length) {
+    await guardarJSON();
+  }
+
+  const r = await window.electronAPI.cambiarCursoActivo(curso);
+  if (r.ok) {
+    setCursoFromStr(curso);
+    aplicarModoHistorico();
+    try {
+      const data = await window.electronAPI.leerJSON();
+      if (data) {
+        cargarJSON(data);
+      } else {
+        solicitudes.length = 0;
+        contador = 1;
+        renderLista();
+        limpiar();
+      }
+    } catch (e) {
+      solicitudes.length = 0;
+      contador = 1;
+      renderLista();
+      limpiar();
+    }
+    toast(`Curso cambiado a ${curso}`);
+  }
+};
+
+window.cerrarModalCurso = function() {
+  document.getElementById('modalCurso').classList.remove('open');
+};
+
+window.accionCambiarCurso = function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  abrirSelectorCurso();
+};
+
+window.accionExportarHistorico = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!window.electronAPI) { toast('Solo disponible en la app de escritorio'); return; }
+  const { cursos } = await window.electronAPI.listarCursos();
+  const list = document.getElementById('exportHistList');
+  list.innerHTML = cursos.map(c => {
+    const isActual = c === getCursoActualStr();
+    const label = isActual ? `${c} (actual)` : `${c} (histórico)`;
+    return `<button class="btn btn-ghost" style="width:100%;text-align:left;justify-content:flex-start" onclick="exportarCurso('${c}')">
+      📁 ${label}
+    </button>`;
+  }).join('');
+  document.getElementById('modalExportarHist').classList.add('open');
+};
+
+window.exportarCurso = async function(curso) {
+  document.getElementById('modalExportarHist').classList.remove('open');
+  if (!window.electronAPI) return;
+  if (curso === getCursoActualStr()) await guardarJSON();
+  const r = await window.electronAPI.exportarJSONHistorico(curso);
+  if (r.ok) toast(`Curso ${curso} exportado ✓`);
+  else toast('❌ ' + (r.error || 'Error al exportar'));
+};
+
+window.cerrarModalExportarHist = function() {
+  document.getElementById('modalExportarHist').classList.remove('open');
+};
+
+let _cursoImportDest = null;
+
+window.accionImportarHistorico = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!window.electronAPI) { toast('Solo disponible en la app de escritorio'); return; }
+  const { cursos, actual } = await window.electronAPI.listarCursos();
+  const list = document.getElementById('importHistList');
+  list.innerHTML = cursos.map(c => {
+    const isActual = c === actual;
+    const label = isActual ? `${c} (actual)` : `${c} (histórico)`;
+    return `<button class="btn btn-ghost" style="width:100%;text-align:left;justify-content:flex-start" onclick="prepararImportarCurso('${c}')">
+      📂 ${label}
+    </button>`;
+  }).join('');
+  document.getElementById('modalImportarHist').classList.add('open');
+};
+
+window.prepararImportarCurso = function(curso) {
+  _cursoImportDest = curso;
+  document.getElementById('modalImportarHist').classList.remove('open');
+  document.getElementById('jsonHistFileInput').click();
+};
+
+window.onJSONHistSelected = async function(e) {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file || !_cursoImportDest) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!Array.isArray(data) && !data.solicitudes) {
+      toast('❌ El archivo no contiene datos válidos de solicitudes');
+      _cursoImportDest = null;
+      return;
+    }
+    const r = await window.electronAPI.importarJSONHistorico(_cursoImportDest, data);
+    if (r.ok) {
+      toast(`Datos importados al curso ${_cursoImportDest} ✓`);
+      if (_cursoImportDest === cursoActivo) {
+        const newData = await window.electronAPI.leerJSON();
+        if (newData) cargarJSON(newData);
+      }
+    } else {
+      toast('❌ ' + (r.error || 'Error al importar'));
+    }
+  } catch (err) {
+    toast('❌ Error al leer el JSON: ' + err.message);
+  }
+  _cursoImportDest = null;
+};
+
+window.cerrarModalImportarHist = function() {
+  document.getElementById('modalImportarHist').classList.remove('open');
+};
+
+async function iniciar() {
+  if (window.electronAPI) {
+    try {
+      const prefs = await window.electronAPI.leerPrefs();
+      if (prefs?.sortKey) { sortKey = prefs.sortKey; sortAsc = prefs.sortAsc !== false; }
+      aplicarSortUI();
+    } catch {}
+  }
+
+  window._dark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  applyTheme();
+
+  if (window.electronAPI) {
+    try {
+      cerrarBienvenida();
+      const cursoInfo = await window.electronAPI.leerCursoActivo();
+      const cursoDelBackend = cursoInfo?.curso || '';
+      setCursoFromStr(cursoDelBackend || getCursoActualStr());
+      aplicarModoHistorico();
+      limpiar();
+      const data = await window.electronAPI.leerJSON();
+      if (data) cargarJSON(data);
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+  setCursoFromStr(getCursoActualStr());
+  aplicarModoHistorico();
+  limpiar();
+
+  try {
+    jsonHandle = await recuperarHandle();
+    if (jsonHandle) {
+      try {
+        const perm = await jsonHandle.requestPermission({mode:'read'});
+        if (perm === 'granted') {
+          const file = await jsonHandle.getFile();
+          const text = await file.text();
+          cargarJSON(JSON.parse(text));
+          cerrarBienvenida();
+        }
+      } catch (e) { /* permiso o lectura fallida */ }
+    }
+  } catch (e) { /* ignore */ }
+}
+
+/* ── Cargar JSON ── */
+window.onJSONSelected = async function(e) {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  if (solicitudes.length && !confirm('Ya hay solicitudes cargadas. ¿Deseas reemplazarlas?')) return;
+  try { cargarJSON(JSON.parse(await file.text())); }
+  catch (e) { toast('❌ Error al leer el JSON: ' + e.message); }
+};
+
+const ESPECIALIDADES_VALIDAS = new Set([
+  'Clarinete','Contrabajo','Fagot','Flauta','Guitarra','Oboe',
+  'Percusión','Piano','Saxofón','Trombón','Trompa','Trompeta',
+  'Tuba','Viola','Violín','Violoncello','—'
+]);
+
+function sanitizarSolicitud(s) {
+  const fnacISO = normalizarFnac(s.fnac || '');
+  const curso   = Math.min(4, Math.max(1, parseInt(s.curso) || 1));
+  const esp     = ESPECIALIDADES_VALIDAS.has(s.especialidad) ? s.especialidad : '—';
+  // Validar fecha: año entre 1980 y año actual+1
+  const anioFnac = fnacISO ? parseInt(fnacISO.slice(0, 4)) : 0;
+  const fnac = (anioFnac >= 1980 && anioFnac <= new Date().getFullYear() + 1) ? fnacISO : '';
+  return {
+    num:           Math.max(1, parseInt(s.num) || 1),
+    apellidos:     String(s.apellidos || '').trim(),
+    nombre:        String(s.nombre    || '').trim(),
+    fnac,
+    edad:          calcularEdad(fnac),
+    curso,
+    especialidad:  esp,
+    excluido:      !!s.excluido,
+    redirigido_a_1: !!s.redirigido_a_1,
+    obs:           String(s.obs || '').trim()
+  };
+}
+
+function cargarJSON(data) {
+  const arr = Array.isArray(data) ? data : (data.solicitudes || []);
+  if (!arr.length) { toast('❌ JSON sin registros válidos'); return; }
+  solicitudes.length = 0;
+  arr.forEach(s => solicitudes.push(sanitizarSolicitud(s)));
+  contador = Math.max(...solicitudes.map(s => s.num)) + 1;
+  renderLista(); limpiar();
+  const tribCfg = data.tribunalesConfig || null;
+  if (tribCfg) {
+    window._tribunalesConfigGlobal = tribCfg;
+    if (window.electronAPI) {
+      window.electronAPI.guardarTribunalesConfig(tribCfg);
+    }
+  }
+  if (data.diaPruebas !== undefined && data.diaPruebas !== null) {
+    localStorage.setItem('diaPruebas', String(data.diaPruebas));
+  }
+  let msg = `✓ ${solicitudes.length} solicitud${solicitudes.length !== 1 ? 'es' : ''} cargada${solicitudes.length !== 1 ? 's' : ''}`;
+  if (tribCfg && tribCfg.tribunales) msg += ' · Tribunales recuperados';
+  if (data.diaPruebas) msg += ' · Fecha de pruebas recuperada';
+  toast(msg);
+}
+
+/* ── Guardar JSON ── */
+async function guardarJSON() {
+  const data = {
+    generado: new Date().toISOString(),
+    centro: 'C.P.M. Marcos Redondo',
+    anioInicio: ANIO,
+    cursoCombinado: CURSO_STR,
+    diaPruebas: localStorage.getItem('diaPruebas') || '',
+    solicitudes,
+    tribunalesConfig: window._tribunalesConfigGlobal || null
+  };
+  // Electron: guardado automático silencioso
+  if (window.electronAPI) {
+    const r = await window.electronAPI.guardarJSON(data);
+    if (!r.ok) toast('❌ Error al guardar: ' + r.error);
+    return;
+  }
+  // Navegador: comportamiento original
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  if (jsonHandle) {
+    try {
+      const w = await jsonHandle.createWritable(); await w.write(blob); await w.close();
+      toast('JSON actualizado ✓'); return;
+    } catch { jsonHandle = null; }
+  }
+  if ('showSaveFilePicker' in window) {
+    try {
+      jsonHandle = await window.showSaveFilePicker({
+        suggestedName: JSON_NAME,
+        types: [{description:'JSON', accept:{'application/json':['.json']}}]
+      });
+      await guardarHandle(jsonHandle);
+      const w = await jsonHandle.createWritable(); await w.write(blob); await w.close();
+      toast('JSON guardado ✓'); return;
+    } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = JSON_NAME; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('JSON descargado ✓');
+}
+
+/* ── Importar / Exportar (acciones del menú) ── */
+window.accionCargarJSON = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (window.electronAPI) {
+    if (solicitudes.length && !confirm('Ya hay solicitudes cargadas. ¿Deseas reemplazarlas?')) return;
+    const data = await window.electronAPI.importarJSON();
+    if (data) cargarJSON(data);
+    return;
+  }
+  document.getElementById('jsonFileInput').click();
+};
+
+window.accionExportarJSON = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  const data = {
+    generado: new Date().toISOString(),
+    centro: 'C.P.M. Marcos Redondo',
+    anioInicio: ANIO,
+    cursoCombinado: CURSO_STR,
+    _nombreSugerido: JSON_NAME,
+    diaPruebas: localStorage.getItem('diaPruebas') || '',
+    solicitudes,
+    tribunalesConfig: window._tribunalesConfigGlobal || null
+  };
+  if (window.electronAPI) {
+    const r = await window.electronAPI.exportarJSON(data);
+    if (r.ok) toast('Copia exportada ✓');
+    else if (r.error) toast('❌ Error al exportar: ' + r.error);
+    return;
+  }
+  // Navegador: descarga directa
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = JSON_NAME; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('JSON descargado ✓');
+};
+
+/* ── Validación de edad ── */
+const OBS_MARKER = 'Excluido por edad:';
+
+function limpiarObsEdad() {
+  const o = document.getElementById('obs');
+  o.value = o.value.split('\n')
+    .filter(l => !l.startsWith(OBS_MARKER))
+    .join('\n').replace(/^\n+|\n+$/g, '');
+}
+
+function revalidarEdad() {
+  const fnacISO = getFnacISO();
+  const curso = parseInt(document.getElementById('curso').value);
+  const wrap = document.getElementById('fnacWrap');
+  const ico  = document.getElementById('fnacIco');
+  const edadInfo = document.getElementById('edadInfo');
+
+  limpiarObsEdad();
+  wrap.className = 'inp-wrap'; ico.textContent = '';
+
+  if (!fnacISO) { edadInfo.style.display = 'none'; return; }
+
+  const edad = calcularEdad(fnacISO);
+  if (edad === null) { edadInfo.style.display = 'none'; return; }
+
+  edadInfo.textContent = `🎂 ${edad} año${edad !== 1 ? 's' : ''} a 31/12/${ANIO}`;
+  edadInfo.style.display = 'block';
+
+  if (!curso) return;
+
+  const [min, max] = RANGOS[curso];
+  if (edad < min || edad > max) {
+    wrap.className = 'inp-wrap inp-err'; ico.textContent = '✕';
+    const nota = `${OBS_MARKER} ${edad} años a 31/12/${ANIO} (rango para ${CURSOS[curso]}: ${min}–${max} años).`;
+    const o = document.getElementById('obs');
+    o.value = o.value ? o.value + '\n' + nota : nota;
+    const chk = document.getElementById('excluido');
+    chk.checked = true; chk.dispatchEvent(new Event('change'));
+  } else {
+    wrap.className = 'inp-wrap inp-ok'; ico.textContent = '✓';
+    const chk = document.getElementById('excluido');
+    chk.checked = false; chk.dispatchEvent(new Event('change'));
+  }
+}
+
+function mostrarModalEdad(edad, curso) {
+  const [min, max] = RANGOS[curso];
+  document.getElementById('modalEdadMsg').textContent =
+    `El alumno/a tiene ${edad} año${edad !== 1 ? 's' : ''} cumplidos antes del 31/12/${ANIO}. ` +
+    `Para ${CURSOS[curso]} se requiere entre ${min} y ${max} años. ` +
+    `La solicitud se guardará como EXCLUIDA.`;
+  document.getElementById('modalEdad').classList.add('open');
+}
+window.cerrarModalEdad = function() {
+  document.getElementById('modalEdad').classList.remove('open');
+};
+
+/* ── Eventos del formulario ── */
+document.getElementById('curso').addEventListener('change', function() {
+  const esp = document.getElementById('especialidad');
+  const rw = document.getElementById('redirigidoWrap');
+  const ra = document.getElementById('redirigido_a_1');
+  if (this.value === '1') {
+    esp.disabled = true; esp.value = '';
+    esp.options[0].text = '— No disponible en 1º —';
+    rw.style.display = 'none'; ra.checked = false;
+    ra.dispatchEvent(new Event('change'));
+  } else if (!this.value) {
+    esp.disabled = true;
+    esp.options[0].text = '— Seleccionar curso primero —';
+    rw.style.display = 'none'; ra.checked = false;
+    ra.dispatchEvent(new Event('change'));
+  } else {
+    esp.disabled = false;
+    esp.options[0].text = '— Seleccionar especialidad —';
+    rw.style.display = '';
+  }
+  if (getFnacISO()) revalidarEdad();
+});
+
+// Máscara de fecha: escribe "ddmmaaaa" → formatea a "DD/MM/AAAA"
+document.getElementById('fnac').addEventListener('input', function() {
+  let v = this.value.replace(/\D/g, '');
+  if (v.length > 8) v = v.slice(0, 8);
+  let out = '';
+  if (v.length > 0) out = v.slice(0, 2);
+  if (v.length > 2) out += '/' + v.slice(2, 4);
+  if (v.length > 4) out += '/' + v.slice(4, 8);
+  this.value = out;
+  this.dataset.iso = '';
+});
+
+document.getElementById('fnac').addEventListener('blur', function() {
+  const parts = this.value.split('/');
+  if (parts.length === 3 && parts[2].length >= 4) {
+    const y = parseInt(parts[2]);
+    const d = parts[0].padStart(2,'0');
+    const m = parts[1].padStart(2,'0');
+    this.value = `${d}/${m}/${y}`;
+    this.dataset.iso = `${y}-${m}-${d}`;
+    revalidarEdad();
+  } else if (parts.length === 3 && parts[2].length === 2) {
+    // Acepta AA como año (añade 2000)
+    const y = 2000 + parseInt(parts[2]);
+    const d = parts[0].padStart(2,'0');
+    const m = parts[1].padStart(2,'0');
+    this.value = `${d}/${m}/${y}`;
+    this.dataset.iso = `${y}-${m}-${d}`;
+    revalidarEdad();
+  } else {
+    this.dataset.iso = '';
+  }
+});
+
+document.getElementById('excluido').addEventListener('change', function() {
+  const l = document.getElementById('excluidoLabel');
+  l.textContent = this.checked ? 'Sí' : 'No';
+  l.className = 'tlbl ' + (this.checked ? 'tsi' : 'tno');
+});
+
+document.getElementById('redirigido_a_1').addEventListener('change', function() {
+  const l = document.getElementById('redirigidoLabel');
+  l.textContent = this.checked ? 'Sí' : 'No';
+  l.className = 'tlbl ' + (this.checked ? 'tsi' : 'tno');
+});
+
+// Filtrado desde el encabezado de la lista
+document.getElementById('filtro')?.addEventListener('input', renderLista);
+document.getElementById('filtroCurso')?.addEventListener('change', renderLista);
+document.getElementById('filtroEspecialidad')?.addEventListener('change', renderLista);
+
+function toggleClearBtn(fieldId, btnId) {
+  const btn = document.getElementById(btnId);
+  if (btn) btn.style.display = document.getElementById(fieldId)?.value ? '' : 'none';
+}
+function limpiarFiltro(fieldId, btnId) {
+  const el = document.getElementById(fieldId);
+  if (el) {
+    el.value = '';
+    el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
+  }
+  const btn = document.getElementById(btnId);
+  if (btn) btn.style.display = 'none';
+}
+
+window.setFiltroNivel = function(nivel) {
+  filtroNivel = (filtroNivel === nivel) ? null : nivel;
+  document.getElementById('btnNivel1').classList.toggle('active', filtroNivel === '1');
+  document.getElementById('btnNivel234').classList.toggle('active', filtroNivel === '234');
+  document.getElementById('btnNivelRedir').classList.toggle('active', filtroNivel === 'redir');
+  renderLista();
+};
+
+/* ── Duplicados ── */
+let _pendingObj = null;
+let _dupIdx = null;
+
+// normalize, jaroWinkler, simNorm \u2014 definidas en lib.js
+
+function buscarSimilar(nombre, apellidos, excluirIdx) {
+  let mejor = null, mejorScore = 0;
+  solicitudes.forEach((s, i) => {
+    if (i === excluirIdx) return;
+    const sa = simNorm(s.apellidos, apellidos);
+    const sn = simNorm(s.nombre, nombre);
+    if (sa >= 0.82 && sn >= 0.75) {
+      const score = sa * 0.6 + sn * 0.4;
+      if (score > mejorScore) { mejor = { s, i, sa, sn, score }; mejorScore = score; }
+    }
+  });
+  return mejor;
+}
+
+function mostrarModalDup(obj, match) {
+  const { s: ex, i: exIdx, sa, sn, score } = match;
+  _pendingObj = obj;
+  _dupIdx = exIdx;
+  const esExacto = sa === 1 && sn === 1;
+  document.getElementById('modalDupTitle').textContent = esExacto ? 'Solicitud duplicada' : 'Posible duplicado';
+  document.getElementById('modalDupMsg').textContent = esExacto
+    ? `Ya existe el registro #${ex.num} con exactamente el mismo nombre. ¿Es la misma persona?`
+    : `El registro #${ex.num} tiene un nombre muy similar. Comprueba si se trata de la misma persona.`;
+  const badge = document.getElementById('dupSimBadge');
+  if (esExacto) { badge.style.display = 'none'; } else {
+    badge.textContent = `Similitud: ${Math.round(score * 100)}%`;
+    badge.style.display = 'block';
+  }
+  document.getElementById('dupExNum').textContent = `#${ex.num}`;
+  document.getElementById('dupExApellidos').textContent = ex.apellidos;
+  document.getElementById('dupExNombre').textContent = ex.nombre;
+  document.getElementById('dupExFnac').textContent = isoToDisplay(ex.fnac);
+  document.getElementById('dupExCurso').textContent = CURSOS[ex.curso] || ex.curso;
+  document.getElementById('dupExEsp').textContent = ex.especialidad;
+  const exExcEl = document.getElementById('dupF_exExc');
+  if (ex.excluido) { document.getElementById('dupExExc').textContent = 'Sí'; exExcEl.style.display = ''; }
+  else exExcEl.style.display = 'none';
+  const exObsEl = document.getElementById('dupF_exObs');
+  if (ex.obs) { document.getElementById('dupExObs').textContent = ex.obs; exObsEl.style.display = ''; }
+  else exObsEl.style.display = 'none';
+  document.getElementById('dupNwApellidos').textContent = obj.apellidos;
+  document.getElementById('dupNwNombre').textContent = obj.nombre;
+  document.getElementById('dupNwFnac').textContent = isoToDisplay(obj.fnac);
+  document.getElementById('dupNwCurso').textContent = CURSOS[obj.curso] || obj.curso;
+  document.getElementById('dupNwEsp').textContent = obj.especialidad;
+  const nwExcEl = document.getElementById('dupF_nwExc');
+  if (obj.excluido) { document.getElementById('dupNwExc').textContent = 'Sí'; nwExcEl.style.display = ''; }
+  else nwExcEl.style.display = 'none';
+  const nwObsEl = document.getElementById('dupF_nwObs');
+  if (obj.obs) { document.getElementById('dupNwObs').textContent = obj.obs; nwObsEl.style.display = ''; }
+  else nwObsEl.style.display = 'none';
+  document.getElementById('dupF_exApellidos').classList.toggle('diff', sa < 1);
+  document.getElementById('dupF_nwApellidos').classList.toggle('diff', sa < 1);
+  document.getElementById('dupF_exNombre').classList.toggle('diff', sn < 1);
+  document.getElementById('dupF_nwNombre').classList.toggle('diff', sn < 1);
+  document.getElementById('modalDup').classList.add('open');
+}
+
+window.cerrarModalDup = function() {
+  document.getElementById('modalDup').classList.remove('open');
+  _pendingObj = null;
+  _dupIdx = null;
+};
+
+window.confirmarDup = async function() {
+  document.getElementById('modalDup').classList.remove('open');
+  if (!_pendingObj) return;
+  const obj = _pendingObj;
+  _pendingObj = null;
+  _dupIdx = null;
+  await _commitGuardar(obj);
+};
+
+window.editarExistenteDup = function() {
+  document.getElementById('modalDup').classList.remove('open');
+  const idx = _dupIdx;
+  _pendingObj = null;
+  _dupIdx = null;
+  limpiar();
+  window.cargarEnFormulario(idx);
+};
+
+async function _commitGuardar(obj) {
+  const fueraDeEdad = obj.edad !== null &&
+    (obj.edad < RANGOS[obj.curso][0] || obj.edad > RANGOS[obj.curso][1]);
+  if (fueraDeEdad) mostrarModalEdad(obj.edad, obj.curso);
+
+  if (editIdx !== null) {
+    obj.num = solicitudes[editIdx].num;
+    solicitudes[editIdx] = obj;
+    editIdx = null;
+  } else {
+    obj.num = contador++;
+    solicitudes.push(obj);
+  }
+  renderLista();
+  await guardarJSON();
+  limpiar();
+}
+
+/* ── Guardar / Editar ── */
+window.guardar = async function() {
+  if (!esCursoActual) {
+    toast('No se pueden guardar solicitudes en modo histórico');
+    return;
+  }
+  const nombre    = document.getElementById('nombre').value.trim();
+  const apellidos = document.getElementById('apellidos').value.trim();
+  const fnacISO   = getFnacISO();
+  const fnacDisplay = document.getElementById('fnac').value;
+  const curso     = document.getElementById('curso').value;
+
+  if (!nombre || !apellidos || !fnacDisplay || !fnacISO || !curso) {
+    alert('Completa todos los campos obligatorios (Apellidos, Nombre, Fecha de nacimiento y Curso).');
+    return;
+  }
+
+  const edad = calcularEdad(fnacISO);
+  const cursoNum = parseInt(curso);
+
+  const esp = document.getElementById('especialidad');
+  const obj = {
+    nombre, apellidos,
+    fnac:        fnacISO,
+    edad:        edad,
+    curso:       cursoNum,
+    especialidad: (curso === '1' || esp.disabled) ? '—' : (esp.value || '—'),
+    excluido:    document.getElementById('excluido').checked,
+    redirigido_a_1: document.getElementById('redirigido_a_1').checked,
+    obs:         document.getElementById('obs').value.trim()
+  };
+
+  // Comprobar duplicado exacto o por similitud (excluye el registro que se está editando)
+  const match = buscarSimilar(nombre, apellidos, editIdx);
+  if (match) {
+    mostrarModalDup(obj, match);
+    return;
+  }
+
+  await _commitGuardar(obj);
+};
+
+/* ── Atajo de teclado Ctrl+Enter ── */
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    window.guardar();
+  }
+});
+
+window.cargarEnFormulario = function(idx) {
+  if (!esCursoActual) {
+    toast('Modo histórico: solo lectura');
+    return;
+  }
+  const s = solicitudes[idx]; editIdx = idx;
+  document.getElementById('apellidos').value = s.apellidos;
+  document.getElementById('nombre').value    = s.nombre;
+  const el = document.getElementById('fnac');
+  el.value = isoToDisplay(s.fnac);   // ISO → "DD/MM/AAAA" para mostrar
+  el.dataset.iso = s.fnac;           // ISO en dataset para cálculos
+  const cs = document.getElementById('curso');
+  cs.value = String(s.curso); cs.dispatchEvent(new Event('change'));
+  setTimeout(() => {
+    const esp = document.getElementById('especialidad');
+    if (s.curso !== 1 && s.especialidad !== '—') esp.value = s.especialidad;
+  }, 10);
+  document.getElementById('excluido').checked = s.excluido;
+  document.getElementById('excluido').dispatchEvent(new Event('change'));
+  const ra = document.getElementById('redirigido_a_1');
+  ra.checked = !!s.redirigido_a_1;
+  ra.dispatchEvent(new Event('change'));
+  document.getElementById('obs').value = s.obs;
+  document.getElementById('formTitle').textContent = 'Editando solicitud';
+  document.getElementById('badgeNum').textContent = '#' + s.num;
+  document.getElementById('badgeNum').className = 'num-badge edit-mode';
+  document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+  document.getElementById('saveBtn').textContent = 'Actualizar solicitud';
+  document.getElementById('saveBtn').className = 'btn btn-solid';
+  if (s.fnac) setTimeout(revalidarEdad, 20);
+  window.scrollTo({top:0, behavior:'smooth'});
+};
+
+window.cancelarEdicion = function() { editIdx = null; limpiar(); };
+
+window.limpiar = function() {
+  ['nombre','apellidos','obs'].forEach(id => document.getElementById(id).value = '');
+  const el = document.getElementById('fnac'); el.value = ''; el.dataset.iso = '';
+  document.getElementById('curso').value = '';
+  const esp = document.getElementById('especialidad');
+  esp.value = ''; esp.disabled = true; esp.options[0].text = '— Seleccionar curso primero —';
+  const chk = document.getElementById('excluido'); chk.checked = false; chk.dispatchEvent(new Event('change'));
+  const rw = document.getElementById('redirigidoWrap'); rw.style.display = 'none';
+  const ra = document.getElementById('redirigido_a_1'); ra.checked = false; ra.dispatchEvent(new Event('change'));
+  document.getElementById('fnacWrap').className = 'inp-wrap';
+  document.getElementById('fnacIco').textContent = '';
+  const ei = document.getElementById('edadInfo'); ei.style.display = 'none'; ei.textContent = '';
+  document.getElementById('formTitle').textContent = 'Nueva solicitud';
+  document.getElementById('badgeNum').textContent = '#' + contador;
+  document.getElementById('badgeNum').className = 'num-badge';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.getElementById('saveBtn').textContent = 'Guardar solicitud';
+  document.getElementById('saveBtn').className = 'btn btn-outline';
+  editIdx = null;
+};
+
+/* ── Eliminar ── */
+window.pedirEliminar = function(idx, e) {
+  e.stopPropagation(); delIdx = idx;
+  const s = solicitudes[idx];
+  document.getElementById('modalDelMsg').textContent =
+    `¿Eliminar la solicitud #${s.num} de ${s.apellidos}, ${s.nombre}? Esta acción no se puede deshacer.`;
+  document.getElementById('modalDel').classList.add('open');
+};
+window.cerrarModalDel = function() {
+  document.getElementById('modalDel').classList.remove('open'); delIdx = null;
+};
+window.confirmarEliminar = async function() {
+  if (!esCursoActual) { toast('No se pueden eliminar solicitudes en modo histórico'); return; }
+  if (delIdx === null) return;
+  if (editIdx === delIdx) cancelarEdicion();
+  solicitudes.splice(delIdx, 1); delIdx = null;
+  cerrarModalDel(); renderLista(); await guardarJSON(); toast('Solicitud eliminada');
+};
+
+/* ── Ordenación ── */
+function aplicarSortUI() {
+  document.querySelectorAll('.sort-btn').forEach(b => {
+    const k = b.dataset.key; b.classList.toggle('active', k === sortKey);
+    const a = document.getElementById('arr-' + k);
+    if (a) a.textContent = k === sortKey ? (sortAsc ? '↓' : '↑') : '';
+  });
+}
+
+window.setSort = function(key) {
+  if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+  aplicarSortUI();
+  renderLista();
+  window.electronAPI?.guardarPrefs({ sortKey, sortAsc });
+};
+function sortedList() {
+  // Aplicar filtros de UI si existen
+  const fFiltro = (document.getElementById('filtro')?.value || '').trim().toLowerCase();
+  const fCurso = (document.getElementById('filtroCurso')?.value || '').trim();
+  const fEsp = (document.getElementById('filtroEspecialidad')?.value || '').trim().toLowerCase();
+
+  let list = [...solicitudes].filter(s => {
+    if (fFiltro) {
+      const fn = (s.nombre || '').toLowerCase();
+      const fa = (s.apellidos || '').toLowerCase();
+      if (!fn.includes(fFiltro) && !fa.includes(fFiltro)) return false;
+    }
+    if (fCurso && String(s.curso) !== fCurso) return false;
+    if (fEsp && (s.especialidad || '').toLowerCase() !== fEsp) return false;
+    if (filtroNivel === '1' && s.curso !== 1) return false;
+    if (filtroNivel === '234' && s.curso === 1) return false;
+    if (filtroNivel === 'redir' && !s.redirigido_a_1) return false;
+    return true;
+  });
+
+  list.sort((a, b) => {
+    let va = a[sortKey], vb = b[sortKey];
+    if (sortKey === 'excluido') { va = va ? 1 : 0; vb = vb ? 1 : 0; }
+    else if (sortKey === 'apellidos' || sortKey === 'nombre') { va = (va||'').toLowerCase(); vb = (vb||'').toLowerCase(); }
+    return va < vb ? (sortAsc ? -1 : 1) : va > vb ? (sortAsc ? 1 : -1) : 0;
+  });
+  return list;
+}
+
+/* ── Render lista ── */
+function renderLista() {
+  const filtered = sortedList();
+  const hasFilter = filtroNivel || (document.getElementById('filtro')?.value || '').trim() ||
+    (document.getElementById('filtroCurso')?.value || '') ||
+    (document.getElementById('filtroEspecialidad')?.value || '');
+  const badge = document.getElementById('totalBadge');
+  if (hasFilter) {
+    const label = filtroNivel === '1' ? ' · 1º' : filtroNivel === '234' ? ' · 2º–4º' : filtroNivel === 'redir' ? ' · Redirigidos' : '';
+    badge.textContent = filtered.length + (filtered.length === 1 ? ' registro' : ' registros') + label + ' (filtrado)';
+  } else {
+    badge.textContent = solicitudes.length + (solicitudes.length === 1 ? ' registro' : ' registros');
+  }
+  const list = document.getElementById('solList');
+  if (!solicitudes.length) {
+    list.innerHTML = '<p class="empty-state">Sin solicitudes registradas.</p>';
+    return;
+  }
+  list.innerHTML = filtered.map(s => {
+    const idx = solicitudes.indexOf(s);
+    const edadTxt = s.edad !== null ? ` · ${s.edad} años` : '';
+    return `<div class="sol-card${s.excluido ? ' excl' : ''}" onclick="cargarEnFormulario(${idx})">
+      <span class="sc-num">#${s.num}</span>
+      <div class="sc-info">
+        <div class="sc-name">${escHtml(s.apellidos)}, ${escHtml(s.nombre)}</div>
+        <div class="sc-meta">
+          <span>🎂 ${fmtF(s.fnac)}${edadTxt}</span>
+          <span>📚 ${CURSOS[s.curso]}</span>
+          ${s.especialidad !== '—' ? `<span>🎵 ${escHtml(s.especialidad)}</span>` : ''}
+          <span class="pill ${s.excluido ? 'pill-si' : 'pill-no'}">${s.excluido ? 'Excluido' : 'Admitido'}</span>
+        </div>
+        ${s.obs ? `<div class="sc-obs">💬 ${escHtml(s.obs)}</div>` : ''}
+      </div>
+      ${s.redirigido_a_1 ? '<span class="pill pill-warn">Redirigido a 1º</span>' : ''}
+      <div class="sc-actions">
+        ${esCursoActual ? `<button class="btn btn-ghost btn-sm" onclick="pedirEliminar(${idx},event)">🗑</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Toast ── */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 2500);
+}
+
+/* ── Tema ── */
+function applyTheme() {
+  document.body.classList.toggle('dark', window._dark);
+  document.body.classList.toggle('light', !window._dark);
+  document.getElementById('menuThemeIco').textContent = window._dark ? '☀️' : '🌙';
+  document.getElementById('menuThemeTxt').textContent = window._dark ? 'Modo Claro' : 'Modo Oscuro';
+}
+function toggleTheme() {
+  window._dark = !window._dark; applyTheme();
+  document.getElementById('menuWrap').removeAttribute('open');
+}
+
+/* ── Generación de Listados PDF ── */
+window.accionListado = async function(tipo) {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!solicitudes.length) { toast('No hay solicitudes registradas'); return; }
+  if (!window.electronAPI) { toast('La generación de PDF solo está disponible en la app de escritorio'); return; }
+
+  toast('Generando PDF…');
+
+  const esc = t => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const admitidos1 = solicitudes
+    .filter(s => !s.excluido && s.curso === 1)
+    .sort((a,b) => (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es'));
+
+  const admitidos234 = solicitudes
+    .filter(s => !s.excluido && s.curso > 1)
+    .sort((a,b) => {
+      const espA = (a.especialidad && a.especialidad !== '—') ? a.especialidad : '';
+      const espB = (b.especialidad && b.especialidad !== '—') ? b.especialidad : '';
+      const cmpEsp = espA.localeCompare(espB, 'es');
+      if (cmpEsp !== 0) return cmpEsp;
+      if (a.curso !== b.curso) return a.curso - b.curso;
+      return (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es');
+    });
+
+  const excluidos = solicitudes
+    .filter(s => s.excluido)
+    .sort((a,b) => (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es'));
+
+  const tipoUP = tipo.toUpperCase();
+
+  const rows1 = admitidos1.map(s =>
+    `<tr><td>${esc(s.apellidos)}</td><td>${esc(s.nombre)}</td></tr>`).join('');
+
+  let rows234 = '';
+  { let lastEsp = null, lastCurso = null;
+    for (const s of admitidos234) {
+      const esp = (s.especialidad && s.especialidad !== '—') ? s.especialidad : '(Sin especialidad)';
+      if (esp !== lastEsp) {
+        rows234 += `<tr class="grp-esp"><td colspan="2">${esc(esp)}</td></tr>`;
+        lastEsp = esp; lastCurso = null;
+      }
+      if (s.curso !== lastCurso) {
+        rows234 += `<tr class="grp-curso"><td colspan="2">${s.curso}º CURSO</td></tr>`;
+        lastCurso = s.curso;
+      }
+      rows234 += `<tr><td>${esc(s.apellidos)}</td><td>${esc(s.nombre)}</td></tr>`;
+    }
+  }
+
+  const rowsExcl = excluidos.map(s =>
+    `<tr><td>${esc(s.apellidos)}</td><td>${esc(s.nombre)}</td><td style="text-align:center">${s.curso}º</td><td>${esc(s.obs || '')}</td></tr>`).join('');
+
+  let body = '';
+
+  if (admitidos1.length) {
+    body += `
+    <div class="section">
+      <div class="titulo-box">RELACIÓN <span class="ul">${tipoUP}</span> DE ADMITIDOS PARA LA PRUEBA DE ACCESO A 1<sup>er</sup>. CURSO DE ENSEÑANZAS ELEMENTALES</div>
+      <div class="subtitulo">(Orden alfabético por apellidos)</div>
+      <table class="t2col">
+        <thead><tr><th>Apellidos</th><th>Nombre</th></tr></thead>
+        <tbody>${rows1}</tbody>
+      </table>
+    </div>`;
+  }
+
+  if (admitidos234.length) {
+    body += `
+    <div class="section${admitidos1.length ? ' pg-break' : ''}">
+      <div class="titulo-box">RELACIÓN <span class="ul">${tipoUP}</span> DE ADMITIDOS PARA LA PRUEBA DE ACCESO A 2º, 3º Y 4º CURSO DE ENSEÑANZAS ELEMENTALES</div>
+      <div class="subtitulo">(Agrupado por especialidad, curso y orden alfabético por apellidos)</div>
+      <table class="t2col">
+        <thead><tr><th>Apellidos</th><th>Nombre</th></tr></thead>
+        <tbody>${rows234}</tbody>
+      </table>
+    </div>`;
+  }
+
+  if (excluidos.length) {
+    const hasAdm = admitidos1.length || admitidos234.length;
+    body += `
+    <div class="section excl-section${hasAdm ? ' pg-break' : ''}">
+      <div class="titulo-box excl-box">RELACIÓN <span class="ul">${tipoUP}</span> DE EXCLUIDOS DE LA PRUEBA DE ACCESO A ENSEÑANZAS ELEMENTALES</div>
+      <div class="subtitulo">(Orden alfabético por apellidos)</div>
+      <table class="t4col">
+        <thead class="excl-head"><tr><th>Apellidos</th><th>Nombre</th><th>Curso</th><th>Motivo de exclusión</th></tr></thead>
+        <tbody>${rowsExcl}</tbody>
+      </table>
+    </div>`;
+  }
+
+  // La cabecera y el pie los gestiona printToPDF (headerTemplate / footerTemplate)
+  // Solo se necesita el CSS del contenido sin márgenes
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<style>
+*{box-sizing:border-box}
+body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#000;margin:0}
+.section{margin-bottom:20pt}
+.pg-break{page-break-before:always}
+.titulo-box{border:1pt solid #000;padding:7pt 12pt;text-align:center;font-weight:bold;font-size:10.5pt;line-height:1.5;margin-bottom:4pt}
+.excl-box{border-color:#7B0000}
+.ul{text-decoration:underline}
+.subtitulo{text-align:right;font-size:8pt;font-style:italic;color:#444;margin-bottom:10pt}
+table{border-collapse:collapse}
+table.t2col{width:62%;margin:0 auto}
+table.t4col{width:100%}
+thead th{background:#1F3864;color:#fff;padding:4pt 9pt;font-size:8.5pt;font-weight:bold;text-align:left;border:0.5pt solid #1F3864}
+.excl-head th{background:#7B0000;border-color:#7B0000}
+tbody td{padding:3pt 9pt;font-size:8.5pt;border:0.5pt solid #B8CCE4}
+tbody tr:nth-child(even) td{background:#DCE6F1}
+table tbody tr.grp-esp td{background:#2E74B5;color:#fff;font-weight:bold;font-size:9pt;padding:4pt 9pt;border:0.5pt solid #2E74B5}
+table tbody tr.grp-curso td{background:#BDD7EE;color:#1F3864;font-weight:bold;font-size:8.5pt;padding:3pt 9pt;border:0.5pt solid #9DC3E6}
+.excl-section tbody tr:nth-child(even) td{background:#FDECEA}
+.excl-section tbody td{border-color:#F4C2C2}
+</style>
+</head><body>${body}</body></html>`;
+
+  const r = await window.electronAPI.generarListado({
+    html,
+    nombreSugerido: `Listado ${tipo} EE ${CURSO_STR}.pdf`
+  });
+  if (r && r.ok === false && r.error) toast('❌ Error al generar PDF: ' + r.error);
+};
+
+/* ── Actas de evaluación (2º-4º) ── */
+window.accionActasEvaluacion = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!solicitudes.length) { toast('No hay solicitudes registradas'); return; }
+  if (!window.electronAPI) { toast('La generación de PDF solo está disponible en la app de escritorio'); return; }
+
+  const diaPruebas = await openDiaPruebasModal();
+  if (diaPruebas === null) return;
+
+  const admitidos = solicitudes
+    .filter(s => !s.excluido && s.curso >= 2 && s.curso <= 4)
+    .sort((a,b) => {
+      const cmpEsp = (a.especialidad || '').localeCompare(b.especialidad || '', 'es');
+      if (cmpEsp !== 0) return cmpEsp;
+      if (a.curso !== b.curso) return a.curso - b.curso;
+      return (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es');
+    });
+
+  if (!admitidos.length) { toast('No hay admitidos en 2º, 3º ni 4º curso'); return; }
+
+  toast('Generando actas de evaluación…');
+
+  const grupos = [];
+  let lastEsp = null, lastCurso = null, actual = null;
+  for (const s of admitidos) {
+    const esp = s.especialidad || 'Sin especialidad';
+    if (esp !== lastEsp || s.curso !== lastCurso) {
+      actual = { especialidad: esp, curso: s.curso, alumnos: [] };
+      grupos.push(actual);
+      lastEsp = esp; lastCurso = s.curso;
+    }
+    actual.alumnos.push(s);
+  }
+
+  const esc = t => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const mes = meses[new Date().getMonth()] || 'JUNIO';
+
+  let pagesHtml = '';
+  let pagina = 1;
+  for (const g of grupos) {
+    const filas = g.alumnos.map((s, i) =>
+      `<tr><td>${i+1}</td><td class="td-nombre">${esc(s.apellidos)}, ${esc(s.nombre)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`
+    ).join('');
+
+    pagesHtml += `
+    <div class="acta-page${pagina > 1 ? ' pg-break' : ''}">
+      <div class="acta-header">
+        <img class="logo-jccm" src="{{LOGO_JCCM}}" alt="JCCM">
+        <img class="logo-cpm" src="{{LOGO_CPM}}" alt="CPM">
+        <div class="acta-inst">Consejería de Educación, Cultura y Deportes</div>
+        <div class="acta-centro">Conservatorio Profesional de Música "Marcos Redondo" – Ciudad Real</div>
+        <div class="acta-titulo-wrap">
+          <div class="acta-titulo">ACTA CORRESPONDIENTE A LA PRUEBA DE ACCESO A LAS ENSEÑANZAS ELEMENTALES DE MÚSICA</div>
+        </div>
+      </div>
+      <div class="acta-cursoac">Curso Académico ${ANIO} – ${ANIO+1}</div>
+      <div class="acta-especialidad">${esc(g.especialidad)}</div>
+      <div class="acta-curso-solo">CURSO ${g.curso}º</div>
+      <table class="acta-tabla">
+        <thead>
+          <tr>
+            <th rowspan="2" class="col-num">Nº</th>
+            <th rowspan="2" class="col-nombre">APELLIDOS Y NOMBRE</th>
+            <th colspan="4" class="col-lm">TOTAL DEL LENGUAJE MUSICAL 50 %</th>
+            <th rowspan="2" class="col-clm">Calificación<br>L. Musical<br>50 %</th>
+            <th colspan="5" class="col-inst">Calificación de la prueba<br>instrumental 50%</th>
+            <th rowspan="2" class="col-def">PUNTUACIÓN<br>DEFINITIVA</th>
+          </tr>
+          <tr>
+            <th class="col-dic">DICTADO<br>(20 %)</th>
+            <th class="col-ent">ENTONACIÓN<br>(25 % + 5 %)</th>
+            <th class="col-teo">TEORIA<br>(20 %)</th>
+            <th class="col-rit">RITMO<br>(30 %)</th>
+            <th class="col-a">A</th>
+            <th class="col-b">B</th>
+            <th class="col-c">C</th>
+            <th class="col-d">D</th>
+            <th class="col-t">T</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="acta-bottom">
+        <div class="acta-leyenda">
+          <p class="ley-tit">Clasificación de la prueba instrumental (50%):</p>
+          <p><strong>A.</strong> Asimilación de los contenidos técnicos del instrumento en relación con las obras ejecutadas: de 0 a 3 puntos.</p>
+          <p><strong>B.</strong> Adaptación y fidelidad a la partitura interpretada (afinación, articulación, fraseo, expresión, dinámica, agógica y estilo): de 0 a 4 puntos.</p>
+          <p><strong>C.</strong> Calidad y correcta emisión del sonido en relación al nivel del curso: de 0 a 2 puntos.</p>
+          <p><strong>D.</strong> Correcta colocación y plasticidad del cuerpo en el desarrollo de la práctica instrumental: de 0 a 1 puntos.</p>
+        </div>
+        <div class="acta-footer">
+          <div class="acta-lugar">CIUDAD REAL, A ${formatFechaLarga(diaPruebas)}</div>
+          <div class="acta-firmas-label">ESPACIO RESERVADO PARA LAS FIRMAS DEL TRIBUNAL y OBSERVACIONES:</div>
+          <div class="acta-firma-line"></div>
+        </div>
+      </div>
+    </div>`;
+    pagina++;
+  }
+
+  // Página resumen de posibles redirecciones a cursos inferiores
+  const REDIR_RANGES = [
+    { curso: 1, label: '1º EE', min: 8,  max: 12 },
+    { curso: 2, label: '2º EE', min: 9,  max: 13 },
+    { curso: 3, label: '3º EE', min: 10, max: 14 },
+  ];
+  let redirHtml = '';
+  for (const { curso: destCurso, label, min, max } of REDIR_RANGES) {
+    const candidatos = admitidos
+      .filter(s => s.curso > destCurso && s.edad !== null && s.edad >= min && s.edad <= max)
+      .sort((a, b) => {
+        const cmpEsp = (a.especialidad || '').localeCompare(b.especialidad || '', 'es');
+        if (cmpEsp !== 0) return cmpEsp;
+        return (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es');
+      });
+    if (!candidatos.length) continue;
+    const byEsp = {};
+    for (const c of candidatos) {
+      const esp = c.especialidad || 'Sin especialidad';
+      if (!byEsp[esp]) byEsp[esp] = [];
+      byEsp[esp].push(c);
+    }
+    let secFilas = '';
+    let nRedir = 1;
+    for (const [esp, alumnos] of Object.entries(byEsp)) {
+      alumnos.forEach((a, idx) => {
+        secFilas += `<tr>${idx === 0 ? `<td rowspan="${alumnos.length}" class="redir-esp">${esc(esp)}</td>` : ''}<td class="redir-num">${nRedir++}</td><td class="td-nombre">${esc(a.apellidos)}, ${esc(a.nombre)}</td><td>${esc(isoToDisplay(a.fnac || ''))}</td><td>${a.edad}</td><td>${a.curso}º</td></tr>`;
+      });
+    }
+    redirHtml += `<div class="redir-section"><div class="redir-titulo">POSIBLE REDIRECCIÓN A ${label} — Edades: ${min}–${max} años</div><table class="redir-tabla"><thead><tr><th class="redir-col-esp">Especialidad</th><th class="redir-col-num">Nº</th><th class="redir-col-nombre">Apellidos y nombre</th><th class="redir-col-fnac">F. Nac.</th><th class="redir-col-edad">Edad</th><th class="redir-col-curso">Curso<br>solicitado</th></tr></thead><tbody>${secFilas}</tbody></table></div>`;
+  }
+  if (redirHtml) {
+    pagesHtml += `<div class="redir-page"><div class="acta-header"><img class="logo-jccm" src="{{LOGO_JCCM}}" alt="JCCM"><img class="logo-cpm" src="{{LOGO_CPM}}" alt="CPM"><div class="acta-inst">Consejería de Educación, Cultura y Deportes</div><div class="acta-centro">Conservatorio Profesional de Música "Marcos Redondo" – Ciudad Real</div><div class="acta-titulo-wrap"><div class="acta-titulo">POSIBLES REDIRECCIONES A CURSOS INFERIORES — Curso Académico ${ANIO}–${ANIO+1}</div></div></div>${redirHtml}</div>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4 landscape; margin: 8mm 10mm; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Calibri,sans-serif;font-size:11.5pt;color:#000;line-height:1.25}
+.acta-page{width:277mm;height:190mm;padding:2mm 2mm;display:flex;flex-direction:column;position:relative;page-break-inside:avoid}
+.pg-break{page-break-before:always}
+.acta-header{text-align:center;position:relative;margin-bottom:2pt}
+.logo-jccm{position:absolute;left:0;top:0;height:32pt;width:auto}
+.logo-cpm{position:absolute;right:0;top:0;height:36pt;width:auto}
+.acta-inst{font-size:11pt;font-weight:bold;text-transform:uppercase;letter-spacing:0.2pt}
+.acta-centro{font-size:11pt;font-weight:bold;margin-bottom:3pt}
+.acta-titulo-wrap{display:flex;justify-content:center}
+.acta-titulo{font-size:11.5pt;font-weight:bold;border:1pt solid #000;padding:3pt 8pt;display:inline-block;text-align:center}
+.acta-cursoac{text-align:center;margin:2pt 0 4pt 0;font-size:11pt;font-weight:bold}
+.acta-especialidad{text-align:center;font-size:16pt;font-weight:bold;margin-bottom:4pt;text-transform:uppercase}
+.acta-curso-solo{text-align:center;font-size:12pt;font-weight:bold;margin-bottom:4pt}
+.acta-tabla{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:3pt;font-size:10.5pt}
+.acta-tabla th,.acta-tabla td{border:0.5pt solid #000;text-align:center;vertical-align:middle;padding:2pt 1pt}
+.acta-tabla thead th{background:#D9D9D9;font-weight:bold}
+.acta-tabla tbody td{height:22pt}
+.td-nombre{text-align:left!important;padding-left:6pt!important;font-size:13pt}
+.col-num{width:4%}.col-nombre{width:23%}.col-lm{width:30%}.col-dic{width:7.5%}.col-ent{width:7.5%}.col-teo{width:7.5%}.col-rit{width:7.5%}.col-clm{width:7%}.col-inst{width:18%}.col-a,.col-b,.col-c,.col-d,.col-t{width:3.6%}.col-def{width:7%}
+.acta-bottom{flex:1;gap:1pt;margin-top:2pt}
+.acta-leyenda{font-size:9.5pt;line-height:1.25}
+.acta-leyenda .ley-tit{font-weight:bold;margin-bottom:0}
+.acta-leyenda p{margin:0}
+.acta-footer{display:flex;flex-direction:column;align-items:center;margin-top:1pt;font-size:10pt;width:100%}
+.acta-lugar{font-weight:bold;text-align:center;margin-bottom:4pt}
+.acta-firmas-label{font-weight:bold;font-size:10pt;margin-bottom:2pt;text-align:center}
+.acta-firma-line{border-bottom:0.5pt solid #000;width:100%;margin-top:2pt}
+.redir-page{width:277mm;padding:2mm 2mm;page-break-before:always}
+.redir-section{margin-bottom:10pt}
+.redir-titulo{font-size:11pt;font-weight:bold;background:#D9D9D9;padding:3pt 6pt;border:0.5pt solid #000;margin-bottom:3pt;text-align:center;text-transform:uppercase}
+.redir-tabla{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:4pt;font-size:10pt}
+.redir-tabla th,.redir-tabla td{border:0.5pt solid #000;text-align:center;vertical-align:middle;padding:2pt 3pt}
+.redir-tabla thead th{background:#D9D9D9;font-weight:bold;font-size:9.5pt}
+.redir-tabla tbody td{height:18pt}
+.redir-esp{text-align:left!important;padding-left:4pt!important;font-weight:bold;background:#F5F5F5;vertical-align:top!important}
+.redir-col-esp{width:20%}.redir-col-num{width:4%}.redir-col-nombre{width:40%}.redir-col-fnac{width:13%}.redir-col-edad{width:8%}.redir-col-curso{width:15%}
+</style>
+</head><body>${pagesHtml}</body></html>`;
+
+  const r = await window.electronAPI.generarActas({
+    html,
+    nombreSugerido: `Actas Evaluación EE ${CURSO_STR}.pdf`
+  });
+  if (r && r.ok === false && r.error) toast('❌ Error al generar actas: ' + r.error);
+};
+
+/* ── Tribunales 1º EE ── */
+let tribunalesConfig = null;
+let tribTabActual = 0;
+let tribSortState = { apellidos: 0, edad: 0 };
+let tribCount = 8;
+let tribOddPlace = 'first';
+window._tribunalesConfigGlobal = null;
+let tribEdited = new Set();
+let tribDiaEdited = new Set();
+let tribHoraEdited = new Set();
+
+function buildTribTabs() {
+  const container = document.getElementById('tribTabs');
+  const isOdd = tribCount % 2 !== 0;
+  let fila1Count, fila2Count;
+  if (!isOdd) { fila1Count = tribCount / 2; fila2Count = tribCount / 2; }
+  else if (tribOddPlace === 'first') { fila1Count = Math.ceil(tribCount / 2); fila2Count = Math.floor(tribCount / 2); }
+  else { fila1Count = Math.floor(tribCount / 2); fila2Count = Math.ceil(tribCount / 2); }
+  let html = '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+  for (let i = 0; i < fila1Count; i++) { html += `<button class="trib-tab${i === tribTabActual ? ' active' : ''}" onclick="selectTribTab(${i})">Tribunal ${i + 1}</button>`; }
+  html += '</div>';
+  if (fila2Count > 0) {
+    html += '<div style="display:flex;gap:4px;flex-wrap:wrap">';
+    for (let i = fila1Count; i < tribCount; i++) { html += `<button class="trib-tab${i === tribTabActual ? ' active' : ''}" onclick="selectTribTab(${i})">Tribunal ${i + 1}</button>`; }
+    html += '</div>';
+  }
+  html += `<div style="display:flex;flex-direction:column;gap:4px;margin-top:2px">`;
+  html += `<button class="trib-tab tab-apoyo${tribTabActual === tribCount ? ' active' : ''}" onclick="selectTribTab(${tribCount})">Apoyo y Suplentes</button>`;
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function getFila1Count() {
+  const isOdd = tribCount % 2 !== 0;
+  if (!isOdd) return tribCount / 2;
+  return tribOddPlace === 'first' ? Math.ceil(tribCount / 2) : Math.floor(tribCount / 2);
+}
+
+function onTribOddPlaceChange() {
+  const sw = document.getElementById('tribOddSwitch');
+  tribOddPlace = sw.checked ? 'second' : 'first';
+  saveTribTabData();
+  buildTribTabs();
+  renderTribTab();
+}
+
+function onTribCountChange() {
+  const slider = document.getElementById('tribCountSlider');
+  const label = document.getElementById('tribCountValue');
+  const newCount = parseInt(slider.value);
+  label.textContent = newCount;
+  document.getElementById('tribOddOptions').style.display = (newCount % 2 !== 0) ? 'flex' : 'none';
+  saveTribTabData();
+  while (tribunalesConfig.tribunales.length < newCount) {
+    tribunalesConfig.tribunales.push({ num: tribunalesConfig.tribunales.length + 1, dia: '', hora: '', aula: '', nombres: '', numAlumnos: null });
+  }
+  tribCount = newCount;
+  initApoyoSuplentes();
+  if (tribTabActual >= tribCount) tribTabActual = tribCount - 1;
+  buildTribTabs();
+  renderTribTab();
+  renderRedirigidosTab();
+}
+
+window.accionTribunales1 = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!esCursoActual) { toast('No se pueden configurar tribunales en modo histórico'); return; }
+  if (!window.electronAPI) { toast('La generación de PDF solo está disponible en la app de escritorio'); return; }
+  tribEdited = new Set();
+  tribDiaEdited = new Set();
+  tribHoraEdited = new Set();
+  try { tribunalesConfig = await window.electronAPI.leerTribunalesConfig(); } catch { tribunalesConfig = null; }
+  if (!tribunalesConfig || !tribunalesConfig.tribunales) {
+    tribunalesConfig = { tribunales: Array.from({ length: 12 }, (_, i) => ({ num: i + 1, dia: '', hora: '', aula: '', nombres: '', numAlumnos: null })) };
+  }
+  window._tribunalesConfigGlobal = JSON.parse(JSON.stringify(tribunalesConfig));
+  while (tribunalesConfig.tribunales.length < 12) {
+    tribunalesConfig.tribunales.push({ num: tribunalesConfig.tribunales.length + 1, dia: '', hora: '', aula: '', nombres: '', numAlumnos: null });
+  }
+  tribCount = tribunalesConfig.tribCount || 8;
+  tribOddPlace = tribunalesConfig.tribOddPlace || 'first';
+  if (!tribunalesConfig.redirigidos) tribunalesConfig.redirigidos = {};
+  document.getElementById('tribCountSlider').value = tribCount;
+  document.getElementById('tribCountValue').textContent = tribCount;
+  document.getElementById('tribOddOptions').style.display = (tribCount % 2 !== 0) ? 'flex' : 'none';
+  document.getElementById('tribOddSwitch').checked = (tribOddPlace === 'second');
+  tribSortState = { apellidos: 0, edad: 0 };
+  updateSortButtons();
+  initApoyoSuplentes();
+  tribTabActual = 0;
+  buildTribTabs();
+  renderTribTab();
+  renderRedirigidosTab();
+  document.getElementById('modalTribunales').classList.add('open');
+};
+
+window.selectTribTab = function(idx) {
+  saveTribTabData();
+  saveRedirigidosTab();
+  tribTabActual = idx;
+  renderTribTab();
+};
+
+function renderTribTab() {
+  buildTribTabs();
+  const isApoyoTab = tribTabActual === tribCount;
+  document.getElementById('tribContent').style.display = isApoyoTab ? 'none' : '';
+  document.getElementById('apoyoContent').style.display = isApoyoTab ? '' : 'none';
+  document.getElementById('tribRedirigidosWrap').style.display = (isApoyoTab || !window._tribunalesConfigGlobal) ? 'none' : '';
+  const sortWrap = document.querySelector('#tribTabs + div');
+  if (sortWrap) sortWrap.style.display = isApoyoTab ? 'none' : '';
+  if (isApoyoTab) { renderApoyoTab(); return; }
+  const trib = tribunalesConfig.tribunales[tribTabActual];
+  const fila1Count = getFila1Count();
+  document.getElementById('tribDia').value = trib.dia || '';
+  document.getElementById('tribHora').value = trib.hora || '';
+  document.getElementById('tribAula').value = trib.aula || '';
+  document.getElementById('tribNombres').value = trib.nombres || '';
+  const inputDia = document.getElementById('tribDia');
+  inputDia.oninput = function() { tribDiaEdited.add(tribTabActual); const val = this.value.trim(); if (val) { for (let i = 0; i < tribCount; i++) { if (i !== tribTabActual && !tribDiaEdited.has(i)) tribunalesConfig.tribunales[i].dia = val; } } scheduleAutoSaveTrib(); };
+  inputDia.onblur = function() { const val = this.value.trim(); if (val) { for (let i = 0; i < tribCount; i++) { if (!tribDiaEdited.has(i)) tribunalesConfig.tribunales[i].dia = val; } } scheduleAutoSaveTrib(); };
+  document.getElementById('tribHora').oninput = function() {
+    tribHoraEdited.add(tribTabActual);
+    const val = this.value.trim();
+    if (val) {
+      const esFila1 = tribTabActual < fila1Count;
+      for (let i = 0; i < tribCount; i++) {
+        if (i === tribTabActual) continue;
+        const enMismaFila = (esFila1 && i < fila1Count) || (!esFila1 && i >= fila1Count);
+        if (enMismaFila && !tribHoraEdited.has(i)) tribunalesConfig.tribunales[i].hora = val;
+      }
+    }
+    scheduleAutoSaveTrib();
+  };
+  document.getElementById('tribAula').oninput = function() { const val = this.value.trim(); const paired = tribTabActual < fila1Count ? tribTabActual + fila1Count : tribTabActual - fila1Count; if (val && paired >= 0 && paired < tribCount) tribunalesConfig.tribunales[paired].aula = val; scheduleAutoSaveTrib(); };
+  const inputAlum = document.getElementById('tribNumAlumnos');
+  const infoAlum = document.getElementById('tribAlumInfo');
+  const esUltimo = tribTabActual === tribCount - 1;
+  inputAlum.oninput = function() { tribEdited.add(tribTabActual); };
+  const admitidos1 = solicitudes.filter(s => !s.excluido && s.curso === 1);
+  const redirigidos = solicitudes.filter(s => !s.excluido && s.redirigido_a_1 && s.curso >= 2 && s.curso <= 4);
+  const totalAlumnos = admitidos1.length + redirigidos.length;
+  if (esUltimo) {
+    const asignados = tribunalesConfig.tribunales.slice(0, tribCount - 1).reduce((sum, t) => sum + (t.numAlumnos || 0), 0);
+    const resto = totalAlumnos - asignados;
+    if (trib.numAlumnos === null || trib.numAlumnos === undefined) { inputAlum.value = resto > 0 ? resto : ''; }
+    else { inputAlum.value = trib.numAlumnos; }
+    infoAlum.textContent = `Quedan ${resto} alumnos sin asignar en tribunales 1-${tribCount - 1}`;
+    infoAlum.style.color = resto < 0 ? '#d32f2f' : 'var(--txt3)';
+  } else {
+    const asignados = tribunalesConfig.tribunales.slice(0, tribTabActual).reduce((sum, t) => sum + (t.numAlumnos || 0), 0);
+    const resto = totalAlumnos - asignados;
+    if (trib.numAlumnos === null || trib.numAlumnos === undefined) { inputAlum.value = resto > 0 ? resto : ''; infoAlum.textContent = resto > 0 ? `=${totalAlumnos}-${asignados}=${resto} alumnos restantes (editable)` : 'No quedan alumnos por asignar'; }
+    else { inputAlum.value = trib.numAlumnos; infoAlum.textContent = resto >= 0 ? `Quedan ${resto} alumnos para tribunales ${tribTabActual + 2}-${tribCount}` : '⚠ Sobran alumnos en tribunales anteriores'; }
+    infoAlum.style.color = resto < 0 ? '#d32f2f' : 'var(--txt3)';
+  }
+}
+
+let _autoSaveTribTimer = null;
+function scheduleAutoSaveTrib() {
+  if (!esCursoActual || !window.electronAPI || !tribunalesConfig) return;
+  clearTimeout(_autoSaveTribTimer);
+  _autoSaveTribTimer = setTimeout(async () => {
+    await window.electronAPI.guardarTribunalesConfig(tribunalesConfig);
+    window._tribunalesConfigGlobal = JSON.parse(JSON.stringify(tribunalesConfig));
+  }, 800);
+}
+
+function saveTribTabData() {
+  if (!tribunalesConfig) return;
+  if (tribTabActual === tribCount) { saveApoyoTab(); return; }
+  const trib = tribunalesConfig.tribunales[tribTabActual];
+  const esUltimo = tribTabActual === tribCount - 1;
+  if (tribEdited.has(tribTabActual) || esUltimo) { const valAlum = document.getElementById('tribNumAlumnos').value.trim(); trib.numAlumnos = valAlum ? parseInt(valAlum) : null; }
+  trib.dia = document.getElementById('tribDia').value.trim();
+  trib.hora = document.getElementById('tribHora').value.trim();
+  trib.aula = document.getElementById('tribAula').value.trim();
+  trib.nombres = document.getElementById('tribNombres').value.trim();
+  if (trib.dia) { for (let i = 0; i < tribCount; i++) { if (i !== tribTabActual && !tribDiaEdited.has(i)) tribunalesConfig.tribunales[i].dia = trib.dia; } }
+  const fila1 = getFila1Count();
+  const esFila1 = tribTabActual < fila1;
+  if (trib.hora) {
+    for (let i = 0; i < tribCount; i++) {
+      if (i === tribTabActual) continue;
+      const enMismaFila = (esFila1 && i < fila1) || (!esFila1 && i >= fila1);
+      if (enMismaFila && !tribHoraEdited.has(i)) tribunalesConfig.tribunales[i].hora = trib.hora;
+    }
+  }
+  const paired = tribTabActual < fila1 ? tribTabActual + fila1 : tribTabActual - fila1;
+  if (paired >= 0 && paired < tribCount) { if (trib.aula) tribunalesConfig.tribunales[paired].aula = trib.aula; }
+  scheduleAutoSaveTrib();
+}
+
+window.toggleSortApellidos = function() { if (tribSortState.apellidos === 0) tribSortState.apellidos = 1; else if (tribSortState.apellidos === 1) tribSortState.apellidos = -1; else tribSortState.apellidos = 0; updateSortButtons(); };
+window.toggleSortEdad = function() { if (tribSortState.edad === 0) tribSortState.edad = 1; else if (tribSortState.edad === 1) tribSortState.edad = -1; else tribSortState.edad = 0; updateSortButtons(); };
+function updateSortButtons() {
+  const btnApe = document.getElementById('btnSortApellidos');
+  const btnEdad = document.getElementById('btnSortEdad');
+  const info = document.getElementById('tribSortInfo');
+  btnApe.className = 'trib-sort-btn' + (tribSortState.apellidos === 1 ? ' active-asc' : tribSortState.apellidos === -1 ? ' active-desc' : '');
+  btnEdad.className = 'trib-sort-btn' + (tribSortState.edad === 1 ? ' active-asc' : tribSortState.edad === -1 ? ' active-desc' : '');
+  const parts = [];
+  if (tribSortState.apellidos !== 0) parts.push('Apellidos ' + (tribSortState.apellidos === 1 ? '↑' : '↓'));
+  if (tribSortState.edad !== 0) parts.push('Edad ' + (tribSortState.edad === 1 ? '↑' : '↓'));
+  info.textContent = parts.length ? 'Orden: ' + parts.join(', ') : '';
+}
+
+function initApoyoSuplentes() {
+  const cfg = tribunalesConfig;
+  if (!cfg.apoyoSuplentes) {
+    const apoyo = [];
+    const half = Math.ceil(tribCount / 2);
+    for (let i = 0; i < half; i++) { const trbs = [i + 1]; const paired = i + half; if (paired < tribCount) trbs.push(paired + 1); apoyo.push({ profesor: '', tribunales: trbs }); }
+    cfg.apoyoSuplentes = { apoyo, suplentesLM: [''], suplentes: [''] };
+  }
+  const half = Math.ceil(tribCount / 2);
+  const existing = cfg.apoyoSuplentes.apoyo || [];
+  const newApoyo = [];
+  for (let i = 0; i < half; i++) { const trbs = [i + 1]; const paired = i + half; if (paired < tribCount) trbs.push(paired + 1); const old = existing.find(a => { const sorted = [...a.tribunales].sort((x,y) => x-y); const sortedNew = [...trbs].sort((x,y) => x-y); return JSON.stringify(sorted) === JSON.stringify(sortedNew); }); newApoyo.push({ profesor: old ? old.profesor : '', tribunales: trbs }); }
+  cfg.apoyoSuplentes.apoyo = newApoyo;
+  if (!cfg.apoyoSuplentes.suplentesLM || !cfg.apoyoSuplentes.suplentesLM.length) cfg.apoyoSuplentes.suplentesLM = [''];
+  if (!cfg.apoyoSuplentes.suplentes || !cfg.apoyoSuplentes.suplentes.length) cfg.apoyoSuplentes.suplentes = [''];
+}
+
+function renderApoyoTab() {
+  if (!tribunalesConfig) return;
+  initApoyoSuplentes();
+  const ap = tribunalesConfig.apoyoSuplentes;
+  const container = document.getElementById('apoyoRows');
+  const fila1Count = getFila1Count();
+  container.innerHTML = ap.apoyo.map((a, i) => {
+    const fila1Cards = Array.from({ length: fila1Count }, (_, t) => { const num = t + 1; const sel = a.tribunales.includes(num) ? ' selected' : ''; return `<span class="trib-card${sel}" draggable="true" data-trib="${num}" data-row="${i}" onclick="toggleApoyoCard(this)" ondragstart="onApoyoDragStart(event)" ondragend="onApoyoDragEnd(event)">${num}</span>`; }).join('');
+    const fila2Cards = Array.from({ length: tribCount - fila1Count }, (_, t) => { const num = fila1Count + t + 1; const sel = a.tribunales.includes(num) ? ' selected' : ''; return `<span class="trib-card${sel}" draggable="true" data-trib="${num}" data-row="${i}" onclick="toggleApoyoCard(this)" ondragstart="onApoyoDragStart(event)" ondragend="onApoyoDragEnd(event)">${num}</span>`; }).join('');
+    const cardsHtml = `<div style="display:flex;gap:4px;flex-wrap:wrap">${fila1Cards}</div>` + (fila2Cards ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${fila2Cards}</div>` : '');
+    return `<div class="trib-apoyo-row" data-row="${i}" ondragover="onApoyoDragOver(event)" ondragleave="onApoyoDragLeave(event)" ondrop="onApoyoDrop(event)">
+      <input type="text" value="${escHtml(a.profesor)}" placeholder="Profesor/a de apoyo" data-idx="${i}" class="trib-apoyo-prof">
+      <div class="trib-apoyo-cards">${cardsHtml}</div>
+      <button class="trib-apoyo-del" onclick="removeApoyoRow(${i})" title="Eliminar fila">&times;</button>
+    </div>`;
+  }).join('');
+  renderSupLM();
+  renderSup();
+}
+
+window.toggleApoyoCard = function(el) { el.classList.toggle('selected'); saveApoyoTab(); };
+let _apoyoDragData = null;
+window.onApoyoDragStart = function(e) { const trib = parseInt(e.target.dataset.trib); const fromRow = parseInt(e.target.dataset.row); _apoyoDragData = { trib, fromRow }; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', trib); };
+window.onApoyoDragEnd = function(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.trib-apoyo-row').forEach(r => r.classList.remove('drag-over')); _apoyoDragData = null; };
+window.onApoyoDragOver = function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); };
+window.onApoyoDragLeave = function(e) { e.currentTarget.classList.remove('drag-over'); };
+window.onApoyoDrop = function(e) { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if (!_apoyoDragData) return; const toRow = parseInt(e.currentTarget.dataset.row); const { trib, fromRow } = _apoyoDragData; if (fromRow === toRow) return; const ap = tribunalesConfig.apoyoSuplentes.apoyo; const src = ap[fromRow].tribunales.indexOf(trib); if (src !== -1) ap[fromRow].tribunales.splice(src, 1); if (!ap[toRow].tribunales.includes(trib)) { ap[toRow].tribunales.push(trib); ap[toRow].tribunales.sort((a, b) => a - b); } renderApoyoTab(); scheduleAutoSaveTrib(); };
+window.addApoyoRow = function() { saveApoyoTab(); tribunalesConfig.apoyoSuplentes.apoyo.push({ profesor: '', tribunales: [] }); renderApoyoTab(); scheduleAutoSaveTrib(); };
+window.removeApoyoRow = function(idx) { saveApoyoTab(); tribunalesConfig.apoyoSuplentes.apoyo.splice(idx, 1); renderApoyoTab(); scheduleAutoSaveTrib(); };
+function renderSupLM() { const ap = tribunalesConfig.apoyoSuplentes; const ta = document.getElementById('supLMRows'); ta.value = (ap.suplentesLM || []).join('\n'); }
+function renderSup() { const ap = tribunalesConfig.apoyoSuplentes; const ta = document.getElementById('supRows'); ta.value = (ap.suplentes || []).join('\n'); }
+function escHtml(s) { return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+window.addSupLM = function() {}; window.removeSupLM = function() {}; window.addSup = function() {}; window.removeSup = function() {};
+function saveApoyoTab() {
+  if (!tribunalesConfig || tribTabActual !== tribCount) return;
+  const ap = tribunalesConfig.apoyoSuplentes;
+  const rows = document.querySelectorAll('#apoyoRows .trib-apoyo-row');
+  ap.apoyo = Array.from(rows).map((row, i) => { const prof = row.querySelector('.trib-apoyo-prof').value; const selected = Array.from(row.querySelectorAll('.trib-card.selected')).map(c => parseInt(c.dataset.trib)); return { profesor: prof, tribunales: selected }; });
+  const taLM = document.getElementById('supLMRows'); ap.suplentesLM = taLM.value.split('\n').map(s => s.trim()).filter(s => s); if (!ap.suplentesLM.length) ap.suplentesLM = [''];
+  const taSup = document.getElementById('supRows'); ap.suplentes = taSup.value.split('\n').map(s => s.trim()).filter(s => s); if (!ap.suplentes.length) ap.suplentes = [''];
+  scheduleAutoSaveTrib();
+}
+
+function getRedirigidos() { return solicitudes.filter(s => !s.excluido && s.redirigido_a_1 && s.curso >= 2 && s.curso <= 4); }
+function buildTribSelectOptions(selectedIdx) { let h = '<option value="">— Sin asignar —</option>'; for (let i = 0; i < tribCount; i++) { h += `<option value="${i}"${i === selectedIdx ? ' selected' : ''}>Tribunal ${i + 1}</option>`; } return h; }
+function renderRedirigidosTab() {
+  const redir = getRedirigidos();
+  const wrap = document.getElementById('tribRedirigidosWrap');
+  if (!redir.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  document.getElementById('tribRedirCount').textContent = `(${redir.length} alumno${redir.length !== 1 ? 's' : ''})`;
+  const selTodos = document.getElementById('tribRedirTodos');
+  selTodos.innerHTML = '<option value="">—</option>';
+  for (let i = 0; i < tribCount; i++) { selTodos.innerHTML += `<option value="${i}">Tribunal ${i + 1}</option>`; }
+  selTodos.value = '';
+  const cfg = tribunalesConfig.redirigidos || {};
+  const list = document.getElementById('tribRedirList');
+  list.innerHTML = redir.map(s => { const assigned = cfg[s.num] !== undefined ? cfg[s.num] : ''; return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+      <span style="font-size:12px;min-width:180px"><strong>${escHtml(s.apellidos)}</strong>, ${escHtml(s.nombre)}</span>
+      <span style="font-size:12px;color:var(--txt3)">${CURSOS[s.curso]} · ${escHtml(s.especialidad)}</span>
+      <select class="trib-redir-sel" data-num="${s.num}" style="margin-left:auto;font-size:12px;padding:3px 6px;border-radius:4px;border:1px solid var(--bdr2)" onchange="saveRedirigidosTab()">${buildTribSelectOptions(assigned)}</select>
+    </div>`; }).join('');
+}
+
+function saveRedirigidosTab() {
+  if (!tribunalesConfig) return;
+  const selEls = document.querySelectorAll('.trib-redir-sel');
+  const cfg = {};
+  selEls.forEach(el => { const num = parseInt(el.dataset.num); const val = el.value; if (val !== '') cfg[num] = parseInt(val); });
+  tribunalesConfig.redirigidos = cfg;
+  scheduleAutoSaveTrib();
+}
+
+window.asignarRedirigidosTodos = function() {
+  const val = document.getElementById('tribRedirTodos').value;
+  if (val === '') return;
+  const tribIdx = parseInt(val);
+  const selEls = document.querySelectorAll('.trib-redir-sel');
+  selEls.forEach(el => { el.value = tribIdx; });
+  saveRedirigidosTab();
+};
+
+window.cerrarModalTribunales = function() {
+  saveRedirigidosTab();
+  document.getElementById('modalTribunales').classList.remove('open');
+  tribunalesConfig = null;
+  tribSortState = { apellidos: 0, edad: 0 };
+};
+
+document.getElementById('tribCountSlider').addEventListener('input', onTribCountChange);
+
+window.guardarYGenerarTribunales = async function() {
+  saveTribTabData();
+  saveRedirigidosTab();
+  tribunalesConfig.tribCount = tribCount;
+  tribunalesConfig.tribOddPlace = tribOddPlace;
+  const admitidos1 = solicitudes.filter(s => !s.excluido && s.curso === 1);
+  const redirigidos = solicitudes.filter(s => !s.excluido && s.redirigido_a_1 && s.curso >= 2 && s.curso <= 4);
+  const cfgRedir = tribunalesConfig.redirigidos || {};
+  const totalAlumnos = admitidos1.length + redirigidos.length;
+  const ultimoTrib = tribunalesConfig.tribunales[tribCount - 1];
+  if (ultimoTrib.numAlumnos === null || ultimoTrib.numAlumnos === undefined) {
+    const asignados = tribunalesConfig.tribunales.slice(0, tribCount - 1).reduce((sum, t) => sum + (t.numAlumnos || 0), 0);
+    ultimoTrib.numAlumnos = Math.max(0, totalAlumnos - asignados);
+  }
+  const rGuardar = await window.electronAPI.guardarTribunalesConfig(tribunalesConfig);
+  if (!rGuardar.ok) { toast('❌ Error al guardar configuración: ' + (rGuardar.error || '')); return; }
+  window._tribunalesConfigGlobal = JSON.parse(JSON.stringify(tribunalesConfig));
+  await guardarJSON();
+  document.getElementById('modalTribunales').classList.remove('open');
+  toast('Generando tribunales 1º EE…');
+
+  function buildAlumnoObj(s, esRedirigido) {
+    const fnacISO = normalizarFnac(s.fnac || '');
+    const edad = calcularEdad(fnacISO);
+    let coef = 0;
+    if (edad === 8 || edad === 9) coef = 2;
+    else if (edad === 10 || edad === 11) coef = 1;
+    return { apellidos: s.apellidos, nombre: s.nombre, fnac: fnacISO, fnacDisplay: isoToDisplay(fnacISO), edad: edad, coef: coef, obs: s.obs || '', redirigido: esRedirigido };
+  }
+  let alumnos1 = admitidos1.map(s => buildAlumnoObj(s, false));
+  const alumnosRedir = redirigidos.map(s => buildAlumnoObj(s, true));
+  function sortAlumnos(arr) { arr.sort((a, b) => { let cmp = 0; if (tribSortState.apellidos !== 0) { cmp = (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es') * tribSortState.apellidos; if (cmp !== 0) return cmp; } if (tribSortState.edad !== 0) { cmp = (a.edad - b.edad) * tribSortState.edad; if (cmp !== 0) return cmp; } return (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es'); }); }
+  sortAlumnos(alumnos1); sortAlumnos(alumnosRedir);
+  const tribunales = Array.from({ length: tribCount }, () => []);
+  const redirPorTrib = Array.from({ length: tribCount }, () => []);
+  alumnosRedir.forEach(a => { const tribIdx = cfgRedir[a.num]; if (tribIdx !== undefined && tribIdx >= 0 && tribIdx < tribCount) redirPorTrib[tribIdx].push(a); });
+  for (let t = 0; t < tribCount; t++) tribunales[t].push(...redirPorTrib[t]);
+  const tieneConfig = tribunalesConfig.tribunales.slice(0, tribCount).some(t => t.numAlumnos > 0);
+  if (tieneConfig) {
+    let alumnoIdx = 0;
+    for (let t = 0; t < tribCount; t++) { const numAlum = tribunalesConfig.tribunales[t].numAlumnos || 0; const yaColocados = tribunales[t].length; const huecos = Math.max(0, numAlum - yaColocados); for (let i = 0; i < huecos && alumnoIdx < alumnos1.length; i++) { tribunales[t].push(alumnos1[alumnoIdx]); alumnoIdx++; } }
+    while (alumnoIdx < alumnos1.length) { tribunales[tribCount - 1].push(alumnos1[alumnoIdx]); alumnoIdx++; }
+  } else {
+    let alumnoIdx = 0;
+    alumnos1.forEach((alumno) => { tribunales[alumnoIdx % tribCount].push(alumno); alumnoIdx++; });
+  }
+
+  const esc = t => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const mes = meses[new Date().getMonth()] || 'JUNIO';
+  let pagesHtml = '';
+  let pagina = 1;
+  for (let t = 0; t < tribCount; t++) {
+    const config = tribunalesConfig.tribunales[t];
+    const listaAlumnos = tribunales[t];
+    const filas = listaAlumnos.map((a, i) => `<tr><td>${i + 1}</td><td class="col-text-left">${esc(a.apellidos)}${a.redirigido ? ' *' : ''}</td><td class="col-text-left">${esc(a.nombre)}</td><td>${esc(a.fnacDisplay)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>${a.coef > 0 ? '+' + a.coef : '0'}</td><td></td></tr>`).join('');
+    const nombresHtml = (config.nombres || '').split('\n').map(n => esc(n.trim())).filter(n => n).join('<br>');
+    pagesHtml += `
+    <div class="trib-page${pagina > 1 ? ' pg-break' : ''}">
+      <div class="trib-header">
+        <img class="trib-logo-jccm" src="{{LOGO_JCCM}}" alt="JCCM">
+        <img class="trib-logo-cpm" src="{{LOGO_CPM}}" alt="CPM">
+        <div class="trib-inst">CONSEJERÍA DE EDUCACIÓN, CULTURA Y DEPORTES</div>
+        <div class="trib-centro">Conservatorio Profesional de Música "Marcos Redondo" – Ciudad Real</div>
+        <div class="trib-titulo-wrap">
+          <div class="trib-titulo">PRUEBA DE ACCESO A 1º DE ENSEÑANZA ELEMENTAL DE MÚSICA</div>
+        </div>
+        <div class="trib-num">TRIBUNAL nº ${t + 1}</div>
+      </div>
+      <div class="trib-info-boxes">
+        <div class="trib-box trib-box-left">
+          <div class="trib-box-label">TRIBUNAL</div>
+          <div class="trib-box-content">${nombresHtml}</div>
+        </div>
+        <div class="trib-box trib-box-right">
+          <div class="trib-box-row"><span class="trib-box-label2">DÍA:</span> <span class="trib-box-value">${esc(config.dia)}</span></div>
+          <div class="trib-box-row"><span class="trib-box-label2">HORA:</span> <span class="trib-box-value">${esc(config.hora)}</span></div>
+          <div class="trib-box-row"><span class="trib-box-label2">AULA:</span> <span class="trib-box-value">${esc(config.aula)}</span></div>
+        </div>
+      </div>
+      <table class="trib-tabla">
+        <thead>
+          <tr><th rowspan="3" style="width:1.5%">Nº</th><th rowspan="3" style="width:12.5%">Apellidos</th><th rowspan="3" style="width:5.5%">Nombre</th><th rowspan="3" style="width:6%; border-right: 2pt solid #000;">Fecha<br>nacimiento</th><th rowspan="3" style="width:3.25%; border-right: 2pt solid #000;">Audic</th><th colspan="11" style="width:35.75%">Entonación</th><th colspan="9" style="width:29.25%; border-right: 2pt solid #000;">Ritmo</th><th rowspan="3" style="width:3.25%; border-right: 2pt solid #000;">Coef.<br>Corr.</th><th rowspan="3" style="width:3.25%; background: #E6E6E6;">P.<br>FINAL</th></tr>
+          <tr><th colspan="4">Canción</th><th rowspan="2">A</th><th rowspan="2">B</th><th rowspan="2">C</th><th rowspan="2">D</th><th rowspan="2">E</th><th rowspan="2">F</th><th rowspan="2" style="border-right: 2pt solid #000; background: #E6E6E6;">T</th><th colspan="2">R</th><th rowspan="2">A</th><th rowspan="2">B</th><th rowspan="2">C</th><th rowspan="2">D</th><th rowspan="2">E</th><th rowspan="2">F</th><th rowspan="2" style="border-right: 2pt solid #000; background: #E6E6E6;">T</th></tr>
+          <tr><th>CV</th><th>AF</th><th>RIT</th><th>AD</th><th>P</th><th>AD</th></tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="trib-bottom">
+        <div class="trib-line1">
+          <div class="trib-total">Total Alumnos/as: ${listaAlumnos.length}</div>
+          <div class="trib-fecha-prueba">Ciudad Real, a ${esc(config.dia)}</div>
+        </div>
+        ${listaAlumnos.some(a => a.redirigido) ? '<div style="font-size:9px;color:#666;margin-top:4px">* Alumno/a redirigido/a desde otro curso a 1º EE</div>' : ''}
+        <div class="trib-firmas-label">Firmas del Tribunal:</div>
+      </div>
+    </div>`;
+    pagina++;
+  }
+
+  const ap = tribunalesConfig.apoyoSuplentes;
+  if (ap) {
+    const apoyoRows = (ap.apoyo || []).map(a => { const tribs = a.tribunales.map(t => 'Tribunal ' + t).join(' y '); return `<tr><td style="padding:4pt 6pt;border:0.5pt solid #000;font-size:9pt;width:50%">${esc(a.profesor || '—')}</td><td style="padding:4pt 6pt;border:0.5pt solid #000;font-size:9pt">${tribs}</td></tr>`; }).join('');
+    const supLMRows = (ap.suplentesLM || []).filter(s => s.trim()).map(s => `<tr><td style="padding:4pt 6pt;border:0.5pt solid #000;font-size:9pt">${esc(s)}</td></tr>`).join('') || '<tr><td style="padding:4pt 6pt;border:0.5pt solid #000;font-size:9pt;color:#999">—</td></tr>';
+    const supRows = (ap.suplentes || []).filter(s => s.trim()).map(s => `<tr><td style="padding:4pt 6pt;border:0.5pt solid #000;font-size:9pt">${esc(s)}</td></tr>`).join('') || '<tr><td style="padding:4pt 6pt;border:0.5pt solid #000;font-size:9pt;color:#999">—</td></tr>';
+    pagesHtml += `
+    <div class="trib-page pg-break">
+      <div class="trib-header">
+        <img class="trib-logo-jccm" src="{{LOGO_JCCM}}" alt="JCCM">
+        <img class="trib-logo-cpm" src="{{LOGO_CPM}}" alt="CPM">
+        <div class="trib-inst">CONSEJERÍA DE EDUCACIÓN, CULTURA Y DEPORTES</div>
+        <div class="trib-centro">Conservatorio Profesional de Música "Marcos Redondo" – Ciudad Real</div>
+        <div class="trib-titulo-wrap"><div class="trib-titulo">PRUEBA DE ACCESO A 1º DE ENSEÑANZA ELEMENTAL DE MÚSICA</div></div>
+        <div class="trib-subtitulo">APOYO Y SUPLENTES</div>
+      </div>
+      <div style="text-align:center;margin-bottom:10pt">
+        <div style="font-size:10pt;font-weight:bold;margin-bottom:4pt;text-decoration:underline;display:inline-block">Profesorado de Apoyo</div>
+        <table style="width:60%;border-collapse:collapse;margin:0 auto 8pt"><thead><tr><th style="text-align:left;padding:4pt 6pt;border:0.5pt solid #000;background:#D9D9D9;font-size:9pt;width:50%">Profesor/a de Apoyo</th><th style="text-align:left;padding:4pt 6pt;border:0.5pt solid #000;background:#D9D9D9;font-size:9pt">Tribunales</th></tr></thead><tbody>${apoyoRows}</tbody></table>
+      </div>
+      <div style="text-align:center;margin-bottom:10pt">
+        <div style="font-size:10pt;font-weight:bold;margin-bottom:4pt;text-decoration:underline;display:inline-block">Profesorado Suplente Lenguaje Musical / Fundamentos</div>
+        <table style="width:40%;border-collapse:collapse;margin:0 auto 4pt"><thead><tr><th style="text-align:left;padding:4pt 6pt;border:0.5pt solid #000;background:#D9D9D9;font-size:9pt">Profesor/a Suplente</th></tr></thead><tbody>${supLMRows}</tbody></table>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10pt;font-weight:bold;margin-bottom:4pt;text-decoration:underline;display:inline-block">Profesorado Suplente</div>
+        <table style="width:40%;border-collapse:collapse;margin:0 auto"><thead><tr><th style="text-align:left;padding:4pt 6pt;border:0.5pt solid #000;background:#D9D9D9;font-size:9pt">Profesor/a Suplente</th></tr></thead><tbody>${supRows}</tbody></table>
+      </div>
+    </div>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4 landscape; margin: 10mm 8mm; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#000;line-height:1.2}
+.trib-page{width:277mm;height:190mm;padding:2mm 2mm;display:flex;flex-direction:column;position:relative;page-break-inside:avoid}
+.pg-break{page-break-before:always}
+.trib-header{text-align:center;position:relative;margin-bottom:4pt}
+.trib-logo-jccm{position:absolute;left:0;top:0;height:42pt;width:auto}
+.trib-logo-cpm{position:absolute;right:0;top:0;height:48pt;width:auto}
+.trib-inst{font-size:10pt;font-weight:bold;text-transform:uppercase;letter-spacing:0.3pt;padding-top:2pt}
+.trib-centro{font-size:10pt;font-weight:bold;margin-bottom:4pt}
+.trib-titulo-wrap{display:flex;justify-content:center;margin-bottom:3pt}
+.trib-titulo{font-size:10.5pt;font-weight:bold;border:1pt solid #000;padding:3pt 10pt;display:inline-block}
+.trib-subtitulo{font-size:9pt;font-weight:bold;margin-bottom:2pt}
+.trib-num{font-size:12pt;font-weight:bold;margin:4pt 0}
+.trib-info-boxes{display:flex;width:100%;margin-bottom:6pt;font-size:9pt;gap:0}
+.trib-box{border:0.5pt solid #000;padding:4pt 6pt;min-height:56pt;display:flex;flex-direction:column}
+.trib-box-left{width:50%;border-right:0.25pt solid #000}
+.trib-box-right{width:50%;border-left:0.25pt solid #000}
+.trib-box-label{font-weight:bold;font-size:8.5pt;margin-bottom:2pt;text-decoration:underline}
+.trib-box-label2{font-weight:bold;font-size:8.5pt;display:inline-block;width:28pt}
+.trib-box-value{display:inline-block;min-width:60pt;padding:0 2pt}
+.trib-box-row{margin-bottom:2pt}
+.trib-box-content{font-size:8.5pt;line-height:1.3}
+.trib-tabla{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:6pt;font-size:9pt}
+.trib-tabla th,.trib-tabla td{border:0.5pt solid #000;text-align:center;vertical-align:middle;padding:1pt 0}
+.trib-tabla thead th{background:#D9D9D9;color:#000;font-weight:bold;font-size:8.5pt;line-height:1.1}
+.trib-tabla tbody td{height:26pt}
+.trib-tabla tbody td:nth-child(4),.trib-tabla tbody td:nth-child(5),.trib-tabla tbody td:nth-child(16),.trib-tabla tbody td:nth-child(25),.trib-tabla tbody td:nth-child(26){border-right:2pt solid #000}
+.trib-tabla tbody td:nth-child(16),.trib-tabla tbody td:nth-child(25),.trib-tabla tbody td:nth-child(27){background:#E6E6E6}
+.col-text-left{text-align:left!important;padding-left:2pt!important}
+.trib-bottom{font-size:9pt;padding-top:2pt;padding-bottom:2pt}
+.trib-line1{display:flex;justify-content:space-between;align-items:center;margin-bottom:2pt}
+.trib-total{font-weight:bold}
+.trib-fecha-prueba{font-weight:bold;text-align:center;flex:1}
+.trib-firmas-label{font-weight:bold;font-size:9pt;margin-bottom:0}
+.trib-firma-line{border-bottom:1pt solid #000;width:100%;margin-top:2pt}
+</style>
+</head><body>${pagesHtml}</body></html>`;
+
+  const r = await window.electronAPI.generarTribunales({ html, nombreSugerido: 'Tribunales 1º EE ' + CURSO_STR + '.pdf' });
+  if (r && r.ok === false && r.error) toast('❌ Error al generar tribunales: ' + r.error);
+  tribunalesConfig = null;
+};
+
+/* ── Modal fecha de pruebas (actas 2º-4º) ── */
+// MESES_LARGO y formatFechaLarga — definidas en lib.js
+
+function openDiaPruebasModal() {
+  return new Promise((resolve) => {
+    const saved = localStorage.getItem('diaPruebas') || '';
+    document.getElementById('diaPruebasInput').value = saved;
+    document.getElementById('modalDiaPruebas').classList.add('open');
+    document.getElementById('diaPruebasInput').focus();
+    window._resolveDiaPruebas = resolve;
+  });
+}
+
+window.confirmarDiaPruebas = async function() {
+  const val = document.getElementById('diaPruebasInput').value.trim();
+  if (!val) { toast('Selecciona una fecha válida'); return; }
+  document.getElementById('modalDiaPruebas').classList.remove('open');
+  localStorage.setItem('diaPruebas', val);
+  await guardarJSON();
+  if (window._resolveDiaPruebas) window._resolveDiaPruebas(val);
+};
+
+window.cancelarDiaPruebas = function() {
+  document.getElementById('modalDiaPruebas').classList.remove('open');
+  if (window._resolveDiaPruebas) window._resolveDiaPruebas(null);
+};
+
+/* ── Arranque ── */
+iniciar();
+</script>
+</body>
+</html>

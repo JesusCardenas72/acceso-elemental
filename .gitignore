@@ -1,0 +1,46 @@
+# ── Dependencias ──
+node_modules/
+
+# ── Archivos de bloqueo (regenerables con pnpm install) ──
+package-lock.json
+pnpm-lock.yaml
+
+# ── Datos de alumnos / base de datos (NUNCA subir) ──
+Solicitudes*.json
+Solicitudes*.backup.json
+*.backup.json
+
+# ── Carpeta de backups local ──
+Backup/
+
+# ── Archivos generados / distribución ──
+dist/
+Portable/
+*.7z
+
+# ── PDFs generados con datos de alumnos ──
+Actas de EVALUACIÓN*.pdf
+TRIBUNALES ACCESO*.pdf
+
+# ── Plantilla base de oficio (SÍ se sube) ──
+!Oficio.pdf
+
+# ── Configuración local de IA / editores ──
+.claude/
+.vscode/
+.idea/
+
+# ── Logs y temporales ──
+*.log
+logs/
+*.tmp
+*.temp
+
+# ── Sistema operativo ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Electron / build ──
+release/
+build/
