@@ -2295,25 +2295,25 @@ window.guardarYGenerarTribunales = async function() {
     let coef = 0;
     if (edad === 8 || edad === 9) coef = 2;
     else if (edad === 10 || edad === 11) coef = 1;
-    return { apellidos: s.apellidos, nombre: s.nombre, fnac: fnacISO, fnacDisplay: isoToDisplay(fnacISO), edad: edad, coef: coef, obs: s.obs || '', redirigido: esRedirigido };
+    return { num: s.num, apellidos: s.apellidos, nombre: s.nombre, fnac: fnacISO, fnacDisplay: isoToDisplay(fnacISO), edad: edad, coef: coef, obs: s.obs || '', redirigido: esRedirigido };
   }
   let alumnos1 = admitidos1.map(s => buildAlumnoObj(s, false));
   const alumnosRedir = redirigidos.map(s => buildAlumnoObj(s, true));
   function sortAlumnos(arr) { arr.sort((a, b) => { let cmp = 0; if (tribSortState.apellidos !== 0) { cmp = (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es') * tribSortState.apellidos; if (cmp !== 0) return cmp; } if (tribSortState.edad !== 0) { cmp = (a.edad - b.edad) * tribSortState.edad; if (cmp !== 0) return cmp; } return (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es'); }); }
-  sortAlumnos(alumnos1); sortAlumnos(alumnosRedir);
+  sortAlumnos(alumnos1);
   const tribunales = Array.from({ length: tribCount }, () => []);
   const redirPorTrib = Array.from({ length: tribCount }, () => []);
   alumnosRedir.forEach(a => { const tribIdx = cfgRedir[a.num]; if (tribIdx !== undefined && tribIdx >= 0 && tribIdx < tribCount) redirPorTrib[tribIdx].push(a); });
-  for (let t = 0; t < tribCount; t++) tribunales[t].push(...redirPorTrib[t]);
   const tieneConfig = tribunalesConfig.tribunales.slice(0, tribCount).some(t => t.numAlumnos > 0);
   if (tieneConfig) {
     let alumnoIdx = 0;
-    for (let t = 0; t < tribCount; t++) { const numAlum = tribunalesConfig.tribunales[t].numAlumnos || 0; const yaColocados = tribunales[t].length; const huecos = Math.max(0, numAlum - yaColocados); for (let i = 0; i < huecos && alumnoIdx < alumnos1.length; i++) { tribunales[t].push(alumnos1[alumnoIdx]); alumnoIdx++; } }
+    for (let t = 0; t < tribCount; t++) { const numAlum = tribunalesConfig.tribunales[t].numAlumnos || 0; const yaColocados = redirPorTrib[t].length; const huecos = Math.max(0, numAlum - yaColocados); for (let i = 0; i < huecos && alumnoIdx < alumnos1.length; i++) { tribunales[t].push(alumnos1[alumnoIdx]); alumnoIdx++; } }
     while (alumnoIdx < alumnos1.length) { tribunales[tribCount - 1].push(alumnos1[alumnoIdx]); alumnoIdx++; }
   } else {
     let alumnoIdx = 0;
     alumnos1.forEach((alumno) => { tribunales[alumnoIdx % tribCount].push(alumno); alumnoIdx++; });
   }
+  for (let t = 0; t < tribCount; t++) tribunales[t].push(...redirPorTrib[t]);
 
   const esc = t => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
