@@ -241,6 +241,7 @@ textarea{resize:vertical;min-height:70px;font-family:inherit}
       <div class="drop-sep"></div>
       <button class="drop-item" onclick="accionListado('Provisional')">📋 Listado Provisional</button>
       <button class="drop-item" onclick="accionListado('Definitivo')">📄 Listado Definitivo</button>
+      <button class="drop-item" onclick="accionListadoPorCursos234()">📑 Listado por cursos (2º-4º)</button>
       <button class="drop-item" onclick="accionActasEvaluacion()">📝 Actas de evaluación (2º-4º)</button>
       <button class="drop-item" onclick="accionTribunales1()">🏛️ Tribunales 1º EE</button>
     </div>
@@ -1760,6 +1761,72 @@ table tbody tr.grp-curso td{background:#BDD7EE;color:#1F3864;font-weight:bold;fo
   const r = await window.electronAPI.generarListado({
     html,
     nombreSugerido: `Listado ${tipo} EE ${CURSO_STR}.pdf`
+  });
+  if (r && r.ok === false && r.error) toast('❌ Error al generar PDF: ' + r.error);
+};
+
+/* ── Listado por cursos (2º-4º) con apellidos, nombre, fecha nac. e instrumento ── */
+window.accionListadoPorCursos234 = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!solicitudes.length) { toast('No hay solicitudes registradas'); return; }
+  if (!window.electronAPI) { toast('La generación de PDF solo está disponible en la app de escritorio'); return; }
+
+  const admitidos = solicitudes
+    .filter(s => !s.excluido && s.curso >= 2 && s.curso <= 4)
+    .sort((a,b) => (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es'));
+
+  if (!admitidos.length) { toast('No hay admitidos en 2º, 3º ni 4º curso'); return; }
+
+  toast('Generando PDF…');
+
+  const esc = t => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const porCurso = { 2: [], 3: [], 4: [] };
+  for (const s of admitidos) porCurso[s.curso].push(s);
+
+  let body = '';
+  let primero = true;
+  for (const curso of [2, 3, 4]) {
+    const lista = porCurso[curso];
+    if (!lista.length) continue;
+    const filas = lista.map(s => `<tr>
+        <td>${esc(s.apellidos)}</td>
+        <td>${esc(s.nombre)}</td>
+        <td style="text-align:center">${esc(isoToDisplay(s.fnac || ''))}</td>
+        <td>${esc(s.especialidad && s.especialidad !== '—' ? s.especialidad : '')}</td>
+      </tr>`).join('');
+    body += `
+    <div class="section${primero ? '' : ' pg-break'}">
+      <div class="titulo-box">RELACIÓN DE ADMITIDOS · <span class="ul">${curso}º CURSO</span> DE ENSEÑANZAS ELEMENTALES</div>
+      <div class="subtitulo">(Orden alfabético por apellidos)</div>
+      <table class="t4col">
+        <thead><tr><th>Apellidos</th><th>Nombre</th><th style="text-align:center">Fecha nacimiento</th><th>Instrumento</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>`;
+    primero = false;
+  }
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<style>
+*{box-sizing:border-box}
+body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#000;margin:0}
+.section{margin-bottom:20pt}
+.pg-break{page-break-before:always}
+.titulo-box{border:1pt solid #000;padding:7pt 12pt;text-align:center;font-weight:bold;font-size:10.5pt;line-height:1.5;margin-bottom:4pt}
+.ul{text-decoration:underline}
+.subtitulo{text-align:right;font-size:8pt;font-style:italic;color:#444;margin-bottom:10pt}
+table{border-collapse:collapse}
+table.t4col{width:100%}
+thead th{background:#1F3864;color:#fff;padding:4pt 9pt;font-size:8.5pt;font-weight:bold;text-align:left;border:0.5pt solid #1F3864}
+tbody td{padding:3pt 9pt;font-size:8.5pt;border:0.5pt solid #B8CCE4}
+tbody tr:nth-child(even) td{background:#DCE6F1}
+</style>
+</head><body>${body}</body></html>`;
+
+  const r = await window.electronAPI.generarListado({
+    html,
+    nombreSugerido: `Listado por cursos 2-4 EE ${CURSO_STR}.pdf`
   });
   if (r && r.ok === false && r.error) toast('❌ Error al generar PDF: ' + r.error);
 };
