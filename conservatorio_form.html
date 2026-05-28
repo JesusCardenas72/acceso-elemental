@@ -241,6 +241,7 @@ textarea{resize:vertical;min-height:70px;font-family:inherit}
       <div class="drop-sep"></div>
       <button class="drop-item" onclick="accionListado('Provisional')">📋 Listado Provisional</button>
       <button class="drop-item" onclick="accionListado('Definitivo')">📄 Listado Definitivo</button>
+      <button class="drop-item" onclick="accionListadoPorCursos234()">📑 Listado por cursos (2º-4º)</button>
       <button class="drop-item" onclick="accionActasEvaluacion()">📝 Actas de evaluación (2º-4º)</button>
       <button class="drop-item" onclick="accionTribunales1()">🏛️ Tribunales 1º EE</button>
     </div>
@@ -440,10 +441,11 @@ document.addEventListener('DOMContentLoaded', function(){
               </div>
               <div class="field" id="redirigidoWrap" style="display:none">
                 <label class="lbl">Redirigido a 1º</label>
-                <div class="toggle-row" style="margin-top:6px">
+                <div class="toggle-row" id="redirigidoToggle" style="margin-top:6px">
                   <label class="toggle"><input type="checkbox" id="redirigido_a_1"><span class="sl"></span></label>
                   <span class="tlbl tno" id="redirigidoLabel">No</span>
                 </div>
+                <span id="redirigidoMsg" style="display:none;margin-top:6px;color:#c62828;font-weight:700;font-size:.78rem"></span>
               </div>
               <div class="field w3"><label class="lbl">Observaciones</label>
                 <textarea id="obs" placeholder="Observaciones adicionales…"></textarea>
@@ -669,6 +671,54 @@ document.addEventListener('DOMContentLoaded', function(){
     <div class="modal-btns" style="margin-top:18px">
       <button class="btn btn-ghost" onclick="cancelarDiaPruebas()">Cancelar</button>
       <button class="btn btn-solid" onclick="confirmarDiaPruebas()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal opciones listado por cursos (2º-4º) -->
+<div class="overlay" id="modalListado234">
+  <div class="modal" style="max-width:420px;text-align:left">
+    <div class="modal-icon" style="background:#E8F4FD">
+      <svg viewBox="0 0 24 24" fill="#1a73e8"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"/></svg>
+    </div>
+    <h3 style="color:#1a73e8">Listado por cursos (2º-4º)</h3>
+    <p style="margin-bottom:14px;font-size:12px;color:var(--txt2)">Elige cómo agrupar y ordenar el listado.</p>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
+      <div>
+        <label class="lbl" style="display:block;margin-bottom:5px">Agrupar por</label>
+        <select id="lst234Group" style="width:100%;padding:8px;border:1.5px solid var(--bdr2);border-radius:8px;background:var(--surface2);color:var(--txt)">
+          <option value="curso">Curso (por defecto)</option>
+          <option value="none">Sin agrupar</option>
+          <option value="instrumento">Instrumento</option>
+          <option value="curso-instrumento">Curso e instrumento</option>
+          <option value="instrumento-curso">Instrumento y curso</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl" style="display:block;margin-bottom:5px">Ordenar por</label>
+        <select id="lst234Sort1" style="width:100%;padding:8px;border:1.5px solid var(--bdr2);border-radius:8px;background:var(--surface2);color:var(--txt)">
+          <option value="apellidos">Apellidos</option>
+          <option value="fnac">Fecha nacimiento</option>
+          <option value="curso">Curso</option>
+          <option value="especialidad">Instrumento</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl" style="display:block;margin-bottom:5px">Después por (opcional)</label>
+        <select id="lst234Sort2" style="width:100%;padding:8px;border:1.5px solid var(--bdr2);border-radius:8px;background:var(--surface2);color:var(--txt)">
+          <option value="">— Ninguno —</option>
+          <option value="apellidos">Apellidos</option>
+          <option value="fnac">Fecha nacimiento</option>
+          <option value="curso">Curso</option>
+          <option value="especialidad">Instrumento</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-btns" style="justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="cancelarListado234()">Cancelar</button>
+      <button class="btn btn-solid" onclick="confirmarListado234()">Generar PDF</button>
     </div>
   </div>
 </div>
@@ -1194,6 +1244,25 @@ function revalidarEdad() {
     const chk = document.getElementById('excluido');
     chk.checked = false; chk.dispatchEvent(new Event('change'));
   }
+
+  const rw = document.getElementById('redirigidoWrap');
+  const rt = document.getElementById('redirigidoToggle');
+  const ra = document.getElementById('redirigido_a_1');
+  const rm = document.getElementById('redirigidoMsg');
+  if (curso && curso >= 2) {
+    if (edad >= RANGOS[1][0] && edad <= RANGOS[1][1]) {
+      rw.style.display = '';
+      rt.style.display = '';
+      rm.style.display = 'none';
+    } else {
+      rw.style.display = '';
+      rt.style.display = 'none';
+      ra.checked = false;
+      ra.dispatchEvent(new Event('change'));
+      rm.style.display = '';
+      rm.textContent = `No puede ser redirigido a 1º EE por edad (${edad > RANGOS[1][1] ? 'mayor de ' + RANGOS[1][1] : 'menor de ' + RANGOS[1][0]} años)`;
+    }
+  }
 }
 
 function mostrarModalEdad(edad, curso) {
@@ -1503,6 +1572,8 @@ window.limpiar = function() {
   esp.value = ''; esp.disabled = true; esp.options[0].text = '— Seleccionar curso primero —';
   const chk = document.getElementById('excluido'); chk.checked = false; chk.dispatchEvent(new Event('change'));
   const rw = document.getElementById('redirigidoWrap'); rw.style.display = 'none';
+  const rt = document.getElementById('redirigidoToggle'); if (rt) rt.style.display = '';
+  const rm = document.getElementById('redirigidoMsg'); if (rm) { rm.style.display = 'none'; rm.textContent = ''; }
   const ra = document.getElementById('redirigido_a_1'); ra.checked = false; ra.dispatchEvent(new Event('change'));
   document.getElementById('fnacWrap').className = 'inp-wrap';
   document.getElementById('fnacIco').textContent = '';
@@ -1762,6 +1833,161 @@ table tbody tr.grp-curso td{background:#BDD7EE;color:#1F3864;font-weight:bold;fo
     nombreSugerido: `Listado ${tipo} EE ${CURSO_STR}.pdf`
   });
   if (r && r.ok === false && r.error) toast('❌ Error al generar PDF: ' + r.error);
+};
+
+/* ── Listado por cursos (2º-4º) con opciones de orden y agrupación ── */
+function openListado234Modal() {
+  return new Promise(resolve => {
+    document.getElementById('modalListado234').classList.add('open');
+    window._resolveListado234 = resolve;
+  });
+}
+window.cancelarListado234 = function() {
+  document.getElementById('modalListado234').classList.remove('open');
+  if (window._resolveListado234) { window._resolveListado234(null); window._resolveListado234 = null; }
+};
+window.confirmarListado234 = function() {
+  const opts = {
+    group: document.getElementById('lst234Group').value,
+    sort1: document.getElementById('lst234Sort1').value,
+    sort2: document.getElementById('lst234Sort2').value
+  };
+  document.getElementById('modalListado234').classList.remove('open');
+  if (window._resolveListado234) { window._resolveListado234(opts); window._resolveListado234 = null; }
+};
+
+const LST234_LABELS = { apellidos:'Apellidos', fnac:'Fecha nacimiento', curso:'Curso', especialidad:'Instrumento' };
+
+function lst234Cmp(key, a, b) {
+  if (key === 'apellidos') return (`${a.apellidos} ${a.nombre}`).localeCompare(`${b.apellidos} ${b.nombre}`, 'es');
+  if (key === 'fnac')      return (a.fnac || '').localeCompare(b.fnac || '');
+  if (key === 'curso')     return a.curso - b.curso;
+  if (key === 'especialidad') {
+    const ea = (a.especialidad && a.especialidad !== '—') ? a.especialidad : '';
+    const eb = (b.especialidad && b.especialidad !== '—') ? b.especialidad : '';
+    return ea.localeCompare(eb, 'es');
+  }
+  return 0;
+}
+
+window.accionListadoPorCursos234 = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!solicitudes.length) { toast('No hay solicitudes registradas'); return; }
+  if (!window.electronAPI) { toast('La generación de PDF solo está disponible en la app de escritorio'); return; }
+
+  const admitidos = solicitudes.filter(s => !s.excluido && s.curso >= 2 && s.curso <= 4);
+  if (!admitidos.length) { toast('No hay admitidos en 2º, 3º ni 4º curso'); return; }
+
+  const opts = await openListado234Modal();
+  if (!opts) return;
+
+  toast('Generando PDF…');
+  try {
+
+  const esc = t => (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // Claves de agrupación según opción elegida
+  const groupKeys = {
+    'none': [],
+    'curso': ['curso'],
+    'instrumento': ['especialidad'],
+    'curso-instrumento': ['curso','especialidad'],
+    'instrumento-curso': ['especialidad','curso']
+  }[opts.group] || ['curso'];
+
+  // Orden final: primero claves de agrupación, luego sort1, luego sort2, y desempate por apellidos+nombre
+  const sortKeys = [];
+  for (const k of groupKeys) if (!sortKeys.includes(k)) sortKeys.push(k);
+  if (opts.sort1 && !sortKeys.includes(opts.sort1)) sortKeys.push(opts.sort1);
+  if (opts.sort2 && !sortKeys.includes(opts.sort2)) sortKeys.push(opts.sort2);
+  if (!sortKeys.includes('apellidos')) sortKeys.push('apellidos');
+
+  const ordenados = admitidos.slice().sort((a, b) => {
+    for (const k of sortKeys) {
+      const c = lst234Cmp(k, a, b);
+      if (c !== 0) return c;
+    }
+    return 0;
+  });
+
+  const labelGrupo = (key, val) => {
+    if (key === 'curso') return `${val}º CURSO`;
+    if (key === 'especialidad') return val && val !== '—' ? val : '(Sin instrumento)';
+    return String(val);
+  };
+
+  // Render con encabezados de grupo anidados
+  const NCOLS = 4;
+  let filasHtml = '';
+  const lastVals = new Array(groupKeys.length).fill(undefined);
+
+  for (const s of ordenados) {
+    for (let i = 0; i < groupKeys.length; i++) {
+      const k = groupKeys[i];
+      const v = s[k];
+      if (v !== lastVals[i]) {
+        const cls = i === 0 ? 'grp-esp' : 'grp-curso';
+        filasHtml += `<tr class="${cls}"><td colspan="${NCOLS}">${esc(labelGrupo(k, v))}</td></tr>`;
+        lastVals[i] = v;
+        // resetear niveles inferiores para forzar re-render
+        for (let j = i + 1; j < groupKeys.length; j++) lastVals[j] = undefined;
+      }
+    }
+    filasHtml += `<tr>
+      <td>${esc(s.apellidos)}</td>
+      <td>${esc(s.nombre)}</td>
+      <td style="text-align:center">${esc(isoToDisplay(s.fnac || ''))}</td>
+      <td>${esc(s.especialidad && s.especialidad !== '—' ? s.especialidad : '')}</td>
+    </tr>`;
+  }
+
+  const subtitulo = (() => {
+    const partes = [];
+    if (groupKeys.length) partes.push('Agrupado por ' + groupKeys.map(k => LST234_LABELS[k].toLowerCase()).join(' y '));
+    const ord = [opts.sort1, opts.sort2].filter(Boolean).map(k => LST234_LABELS[k].toLowerCase());
+    if (ord.length) partes.push('orden: ' + ord.join(', '));
+    return partes.length ? '(' + partes.join(' · ') + ')' : '';
+  })();
+
+  const body = `
+    <div class="section">
+      <div class="titulo-box">RELACIÓN DE ADMITIDOS · <span class="ul">2º, 3º Y 4º CURSO</span> DE ENSEÑANZAS ELEMENTALES</div>
+      ${subtitulo ? `<div class="subtitulo">${esc(subtitulo)}</div>` : ''}
+      <table class="t4col">
+        <thead><tr><th>Apellidos</th><th>Nombre</th><th style="text-align:center">Fecha nacimiento</th><th>Instrumento</th></tr></thead>
+        <tbody>${filasHtml}</tbody>
+      </table>
+    </div>`;
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<style>
+*{box-sizing:border-box}
+body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#000;margin:0}
+.section{margin-bottom:20pt}
+.titulo-box{border:1pt solid #000;padding:7pt 12pt;text-align:center;font-weight:bold;font-size:10.5pt;line-height:1.5;margin-bottom:4pt}
+.ul{text-decoration:underline}
+.subtitulo{text-align:right;font-size:8pt;font-style:italic;color:#444;margin-bottom:10pt}
+table{border-collapse:collapse}
+table.t4col{width:100%}
+thead th{background:#1F3864;color:#fff;padding:4pt 9pt;font-size:8.5pt;font-weight:bold;text-align:left;border:0.5pt solid #1F3864}
+tbody td{padding:3pt 9pt;font-size:8.5pt;border:0.5pt solid #B8CCE4}
+tbody tr:nth-child(even) td{background:#DCE6F1}
+tbody tr.grp-esp td{background:#2E74B5;color:#fff;font-weight:bold;font-size:9pt;padding:4pt 9pt;border:0.5pt solid #2E74B5}
+tbody tr.grp-curso td{background:#BDD7EE;color:#1F3864;font-weight:bold;font-size:8.5pt;padding:3pt 9pt;border:0.5pt solid #9DC3E6}
+</style>
+</head><body>${body}</body></html>`;
+
+  console.log('[Listado234] invocando generarListado, HTML length=', html.length);
+  const r = await window.electronAPI.generarListado({
+    html,
+    nombreSugerido: `Listado por cursos 2-4 EE ${CURSO_STR}.pdf`
+  });
+  console.log('[Listado234] respuesta:', r);
+  if (!r || r.ok === false) toast('❌ Error al generar PDF: ' + (r && r.error ? r.error : 'sin detalle'));
+  } catch (e) {
+    console.error('accionListadoPorCursos234:', e);
+    toast('❌ Error JS: ' + (e && e.message ? e.message : e));
+  }
 };
 
 /* ── Actas de evaluación (2º-4º) ── */

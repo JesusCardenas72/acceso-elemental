@@ -325,7 +325,9 @@ async function mostrarPreviewYGuardar(outputBytes, nombreSugerido, { winWidth = 
   const pdfUrl = 'file:///' + tmpPreviewPdf.replace(/\\/g, '/');
   fs.writeFileSync(tmpPreviewHtml, buildPreviewHtml(pdfUrl, nombreSugerido), 'utf-8');
 
-  const mainWin    = BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
+  // Buscar la ventana principal real (visible), no ventanas ocultas de printToPDF
+  // que pueden estar aún en proceso de cierre y matarían la preview como su hija.
+  const mainWin    = BrowserWindow.getAllWindows().find(w => !w.isDestroyed() && w.isVisible());
   const previewWin = new BrowserWindow({
     width: winWidth, height: winHeight,
     title: `Vista previa · ${nombreSugerido}`,
@@ -334,10 +336,13 @@ async function mostrarPreviewYGuardar(outputBytes, nombreSugerido, { winWidth = 
     webPreferences: { preload: path.join(__dirname, 'preload-preview.js'), contextIsolation: true, nodeIntegration: false }
   });
   previewWin.loadFile(tmpPreviewHtml);
+  logger.info(`mostrarPreviewYGuardar: previewWin creado (${winWidth}x${winHeight}), parent=${mainWin ? 'sí' : 'no'} · cargando ${tmpPreviewHtml}`);
+  previewWin.webContents.on('did-fail-load', (_, errCode, errDesc) => logger.error(`previewWin did-fail-load: ${errCode} ${errDesc}`));
+  previewWin.webContents.on('render-process-gone', (_, details) => logger.error(`previewWin render-process-gone: ${JSON.stringify(details)}`));
 
   const accion = await new Promise((resolve) => {
     let done = false;
-    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    const finish = (v) => { logger.info(`mostrarPreviewYGuardar: finish con "${v}"`); if (!done) { done = true; resolve(v); } };
     const actionHandler = (_, action) => { previewWin.close(); finish(action); };
     ipcMain.once('preview-action', actionHandler);
     previewWin.on('closed', () => { ipcMain.removeListener('preview-action', actionHandler); finish('cancel'); });
@@ -379,11 +384,13 @@ async function mostrarPreviewYGuardar(outputBytes, nombreSugerido, { winWidth = 
 
 /* ── IPC: generar PDF de listado provisional/definitivo ── */
 ipcMain.handle('generar-listado', async (_, { html, nombreSugerido }) => {
+  logger.info(`generar-listado: inicio · nombre="${nombreSugerido}" · html.length=${html ? html.length : 'n/a'}`);
   try {
     const contentPdfBuffer = await renderHtmlToPdf(html, 'listado', {
       pageSize: 'A4', printBackground: true, displayHeaderFooter: false,
       margins: { marginType: 'custom', top: 1.61, bottom: 1.46, left: 0.87, right: 0.87 }
     });
+    logger.info(`generar-listado: renderHtmlToPdf OK · buffer=${contentPdfBuffer ? contentPdfBuffer.length : 'null'} bytes`);
 
     const templateBytes = fs.readFileSync(path.join(__dirname, 'Oficio.pdf'));
     const templateDoc   = await PDFDocument.load(templateBytes);
@@ -411,7 +418,9 @@ ipcMain.handle('generar-listado', async (_, { html, nombreSugerido }) => {
     }
 
     const outputBytes = await outputDoc.save();
+    logger.info(`generar-listado: outputDoc.save OK · ${outputBytes.length} bytes · totalPages=${totalPages}`);
     const filePath = await mostrarPreviewYGuardar(outputBytes, nombreSugerido, { dialogTitle: 'Guardar listado PDF' });
+    logger.info(`generar-listado: mostrarPreviewYGuardar → ${filePath ? 'filePath=' + filePath : 'null (cancelado o preview cerrado)'}`);
     if (!filePath) return { ok: false };
     shell.openPath(filePath);
     return { ok: true };
