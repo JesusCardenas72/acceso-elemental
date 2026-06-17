@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   leerTribunalesConfig:    ()       => ipcRenderer.invoke('leer-tribunales-config'),
   guardarTribunalesConfig: (data)   => ipcRenderer.invoke('guardar-tribunales-config', data),
   generarTribunales:       (data)   => ipcRenderer.invoke('generar-tribunales', data),
+  generarExcelOrdenPrelacion: (data) => ipcRenderer.invoke('generar-excel-orden-prelacion', data),
+  generarExcelTodos: () => ipcRenderer.invoke('generar-excel-todos'),
   leerPrefs:    ()       => ipcRenderer.invoke('leer-prefs'),
   guardarPrefs: (patch)  => ipcRenderer.invoke('guardar-prefs', patch),
   // Histórico de cursos escolares

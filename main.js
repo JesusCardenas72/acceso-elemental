@@ -10,6 +10,7 @@ const {
   pushGraphicsState, popGraphicsState,
   moveTo, lineTo, closePath, clip, endPath
 } = require('pdf-lib');
+const XLSX = require('xlsx');
 
 /* ── Logger a fichero ── */
 let _logStream = null;
@@ -548,6 +549,164 @@ ipcMain.handle('generar-tribunales', async (_, { html, nombreSugerido }) => {
   return { ok: true };
   } catch (e) {
     logger.error(`generar-tribunales: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+/* ── IPC: generar Excel de orden de prelación 1º EE ── */
+ipcMain.handle('generar-excel-orden-prelacion', async (_, { solicitudes, tribunalesConfig, nombreSugerido }) => {
+  try {
+    const tribCount = tribunalesConfig.tribCount || 8;
+    const cfgRedir = tribunalesConfig.redirigidos || {};
+
+    const admitidos1 = solicitudes.filter(s => !s.excluido && s.curso === 1);
+    const redirigidos = solicitudes.filter(s => !s.excluido && s.redirigido_a_1 && s.curso >= 2 && s.curso <= 4);
+
+    function buildAlumnoObj(s, esRedirigido) {
+      const fnacDisplay = s.fnac ? s.fnac.split('-').reverse().join('/') : '';
+      return { apellidos: s.apellidos, nombre: s.nombre, fnacDisplay, redirigido: esRedirigido, num: s.num };
+    }
+
+    let alumnos1 = admitidos1.map(s => buildAlumnoObj(s, false));
+    const alumnosRedir = redirigidos.map(s => buildAlumnoObj(s, true));
+
+    alumnos1.sort((a, b) => `${a.apellidos} ${a.nombre}`.localeCompare(`${b.apellidos} ${b.nombre}`, 'es'));
+    alumnosRedir.sort((a, b) => `${a.apellidos} ${a.nombre}`.localeCompare(`${b.apellidos} ${b.nombre}`, 'es'));
+
+    const tribunales = Array.from({ length: tribCount }, () => []);
+    const redirPorTrib = Array.from({ length: tribCount }, () => []);
+
+    alumnosRedir.forEach(a => {
+      const tribIdx = cfgRedir[a.num];
+      if (tribIdx !== undefined && tribIdx >= 0 && tribIdx < tribCount) {
+        redirPorTrib[tribIdx].push(a);
+      }
+    });
+
+    for (let t = 0; t < tribCount; t++) {
+      tribunales[t].push(...redirPorTrib[t]);
+    }
+
+    const tieneConfig = tribunalesConfig.tribunales.slice(0, tribCount).some(t => t.numAlumnos > 0);
+
+    if (tieneConfig) {
+      let alumnoIdx = 0;
+      for (let t = 0; t < tribCount; t++) {
+        const numAlum = tribunalesConfig.tribunales[t].numAlumnos || 0;
+        const yaColocados = tribunales[t].length;
+        const huecos = Math.max(0, numAlum - yaColocados);
+        for (let i = 0; i < huecos && alumnoIdx < alumnos1.length; i++) {
+          tribunales[t].push(alumnos1[alumnoIdx]);
+          alumnoIdx++;
+        }
+      }
+      while (alumnoIdx < alumnos1.length) {
+        tribunales[tribCount - 1].push(alumnos1[alumnoIdx]);
+        alumnoIdx++;
+      }
+    } else {
+      let alumnoIdx = 0;
+      alumnos1.forEach((alumno) => {
+        tribunales[alumnoIdx % tribCount].push(alumno);
+        alumnoIdx++;
+      });
+    }
+
+    const allStudents = [];
+    for (let t = 0; t < tribCount; t++) {
+      for (const alumno of tribunales[t]) {
+        allStudents.push(alumno);
+      }
+    }
+
+    const wsData = [
+      ['Nº de Orden', 'Apellidos', 'Nombre', 'Fecha Nacimiento', 'Nota Final']
+    ];
+
+    for (const alumno of allStudents) {
+      wsData.push(['', alumno.apellidos, alumno.nombre, alumno.fnacDisplay, '']);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [
+      { wch: 14 }, { wch: 35 }, { wch: 22 }, { wch: 20 }, { wch: 14 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Orden de Prelación');
+
+    const outputBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Guardar Excel',
+      defaultPath: nombreSugerido || 'Orden de prelación de 1º EE.xlsx',
+      filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+    });
+    if (!filePath) return { ok: false };
+
+    fs.writeFileSync(filePath, Buffer.from(outputBuffer));
+    shell.openPath(filePath);
+    return { ok: true };
+  } catch (e) {
+    logger.error(`generar-excel-orden-prelacion: ${e.message}`);
+    return { ok: false, error: e.message };
+  }
+});
+
+/* ── IPC: generar Excel con todos los datos de solicitudes ── */
+ipcMain.handle('generar-excel-todos', async () => {
+  try {
+    const f = dataFile(cursoActivo);
+    if (!fs.existsSync(f)) {
+      return { ok: false, error: 'No hay datos guardados para el curso activo' };
+    }
+    const data = JSON.parse(fs.readFileSync(f, 'utf-8'));
+    const solicitudes = data.solicitudes || [];
+    const cursoCombinado = data.cursoCombinado || '';
+
+    const wsData = [
+      ['Nº', 'Apellidos', 'Nombre', 'Fecha Nacimiento', 'Edad', 'Curso', 'Especialidad', 'Excluido', 'Redirigido a 1º', 'Observaciones']
+    ];
+
+    for (const s of solicitudes) {
+      const fnacDisplay = s.fnac ? s.fnac.split('-').reverse().join('/') : '';
+      wsData.push([
+        s.num || '',
+        s.apellidos || '',
+        s.nombre || '',
+        fnacDisplay,
+        s.edad || '',
+        s.curso || '',
+        s.especialidad || '—',
+        s.excluido ? 'Sí' : 'No',
+        s.redirigido_a_1 ? 'Sí' : 'No',
+        s.obs || ''
+      ]);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [
+      { wch: 6 }, { wch: 25 }, { wch: 18 }, { wch: 14 }, { wch: 7 },
+      { wch: 7 }, { wch: 16 }, { wch: 10 }, { wch: 16 }, { wch: 30 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Solicitudes');
+
+    const outputBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Guardar Excel con todos los datos',
+      defaultPath: `Solicitudes_${cursoCombinado || 'datos'}.xlsx`,
+      filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+    });
+    if (!filePath) return { ok: false };
+
+    fs.writeFileSync(filePath, Buffer.from(outputBuffer));
+    shell.openPath(filePath);
+    return { ok: true };
+  } catch (e) {
+    logger.error(`generar-excel-todos: ${e.message}`);
     return { ok: false, error: e.message };
   }
 });

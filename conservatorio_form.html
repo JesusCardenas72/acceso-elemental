@@ -46,7 +46,7 @@ details.menu-wrap summary.menu-btn{background:transparent;border:1.5px solid var
 details.menu-wrap summary.menu-btn::-webkit-details-marker{display:none}
 details.menu-wrap summary.menu-btn:hover{border-color:var(--or);color:var(--or)}
 details.menu-wrap[open] .dropdown{display:block}
-.dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rad-md);min-width:230px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:500;overflow:hidden}
+.dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rad-md);min-width:230px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:500;overflow-y:auto;max-height:80vh}
 .drop-item{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:12px;font-weight:600;color:var(--txt);cursor:pointer;transition:.15s;border:none;background:transparent;width:100%;text-align:left;letter-spacing:.2px}
 .dropdown .font-slider{padding:10px 16px;display:flex;gap:8px;align-items:center}
 .dropdown .font-slider input[type=range]{flex:1}
@@ -227,6 +227,9 @@ textarea{resize:vertical;min-height:70px;font-family:inherit}
       <button class="drop-item" onclick="accionExportarJSON()">
         💾 Exportar copia JSON
       </button>
+      <button class="drop-item" onclick="accionExportarExcel()">
+        📈 Exportar todos los datos (Excel)
+      </button>
       <div class="drop-sep"></div>
       <button class="drop-item" onclick="accionCambiarCurso()">
         📚 Cambiar curso escolar
@@ -243,6 +246,7 @@ textarea{resize:vertical;min-height:70px;font-family:inherit}
       <button class="drop-item" onclick="accionListado('Definitivo')">📄 Listado Definitivo</button>
       <button class="drop-item" onclick="accionListadoPorCursos234()">📑 Listado por cursos (2º-4º)</button>
       <button class="drop-item" onclick="accionActasEvaluacion()">📝 Actas de evaluación (2º-4º)</button>
+      <button class="drop-item" onclick="accionExcelOrdenPrelacion()">📊 Orden de prelación 1º EE (Excel)</button>
       <button class="drop-item" onclick="accionTribunales1()">🏛️ Tribunales 1º EE</button>
     </div>
   </details>
@@ -2242,6 +2246,38 @@ function onTribCountChange() {
   renderTribTab();
   renderRedirigidosTab();
 }
+
+window.accionExcelOrdenPrelacion = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!solicitudes.length) { toast('No hay solicitudes registradas'); return; }
+  if (!window.electronAPI) { toast('La generación de Excel solo está disponible en la app de escritorio'); return; }
+
+  toast('Generando Excel…');
+
+  let cfg;
+  try { cfg = await window.electronAPI.leerTribunalesConfig(); } catch { cfg = null; }
+  if (!cfg || !cfg.tribunales) {
+    cfg = { tribunales: Array.from({ length: 8 }, (_, i) => ({ num: i + 1, dia: '', hora: '', aula: '', nombres: '', numAlumnos: null })), tribCount: 8, redirigidos: {} };
+  }
+
+  const r = await window.electronAPI.generarExcelOrdenPrelacion({
+    solicitudes,
+    tribunalesConfig: cfg,
+    nombreSugerido: `Orden de prelación de 1º EE.xlsx`
+  });
+  if (r && r.ok === false && r.error) toast('❌ Error al generar Excel: ' + r.error);
+};
+
+window.accionExportarExcel = async function() {
+  document.getElementById('menuWrap').removeAttribute('open');
+  if (!window.electronAPI) { toast('La generación de Excel solo está disponible en la app de escritorio'); return; }
+
+  toast('Generando Excel con todos los datos…');
+
+  const r = await window.electronAPI.generarExcelTodos();
+  if (r && r.ok) toast('Excel generado ✓');
+  else if (r && r.ok === false && r.error) toast('❌ Error al generar Excel: ' + r.error);
+};
 
 window.accionTribunales1 = async function() {
   document.getElementById('menuWrap').removeAttribute('open');
